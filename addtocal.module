@@ -8,7 +8,8 @@
  * Implements hook_node_view().
  */
 function addtocal_node_view($node, $view_mode, $langcode) {
-  if ($node->type == 'event' && $view_mode == 'full') {
+  $event_types = variable_get('addtocal_node_types', array('event'));
+  if (in_array($node->type, $event_types) && $view_mode == 'full') {
     $info = addtocal_extract_event_info($node);
 
     $node->content['addtocal'] = addtocal_render(
@@ -30,12 +31,12 @@ function addtocal_node_view($node, $view_mode, $langcode) {
  * @return array
  */
 function addtocal_extract_event_info($node) {
-  $dates = field_get_items('node', $node, 'field_event_date');
+  $dates = field_get_items('node', $node, variable_get('addtocal_date_field', 'field_event_date'));
   $start_date = $dates[0]['value'];
   $end_date = $dates[0]['value2'];
 
-  $location = field_get_items('node', $node, 'field_event_location_title');
-  $location = check_plain($location[0]['value']);
+  $location = field_get_items('node', $node, variable_get('addtocal_location_field', 'field_event_location_title'));
+  $location = ($location) ? check_plain($location[0]['value']) : '';
 
   $body = field_get_items('node', $node, 'body');
   $description = str_replace(PHP_EOL, " ", text_summary($body[0]['value'], $body[0]['format']));
