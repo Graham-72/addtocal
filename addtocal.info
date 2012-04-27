@@ -1,0 +1,6 @@
+name = Add to Cal
+description = TODO: Description of module
+core = 7.x
+files[] = addtocal.module
+files[] = addtocal.css
+files[] = addtocal.js
