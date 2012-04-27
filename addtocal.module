@@ -72,6 +72,8 @@ function addtocal_render($label, $description, $url, $location, $start_date, $en
       'dates' => $rfc_dates['both'],
       'sprop' => 'website:' . $_SERVER['HTTP_HOST'],
       'location' => $location,
+      'details' => $description,
+      'website' => url($url, array('absolute' => TRUE))
     ),
   ));
 
@@ -194,7 +196,7 @@ DTSTAMP:' . $rfc_dates['start'] . '
 DTSTART:' . $rfc_dates['start'] . '
 DTEND:' . $rfc_dates['end'] . '
 SUMMARY:' . $info['title'] . '
-DESCRIPTION: ' . $info['description'] . '
+DESCRIPTION: ' . $info['description'] . ' - ' . url($info['url'], array('absolute' => TRUE)) . '
 LOCATION:' . $info['location'] . '
 END:VEVENT
 END:VCALENDAR';
