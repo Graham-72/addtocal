@@ -9,15 +9,47 @@
  */
 function addtocal_node_view($node, $view_mode, $langcode) {
   if ($node->type == 'event' && $view_mode == 'full') {
-    $dates = field_get_items('node', $node, 'field_event_date');
-    $location = field_get_items('node', $node, 'field_event_location_title');
-    
-    $start_date = $dates[0]['value'];
-    $end_date = $dates[0]['value2'];
-    
-    $node->content['addtocal'] = addtocal_render('node', $node,
-      $location[0]['value'], $start_date, $end_date);
+    $info = addtocal_extract_event_info($node);
+
+    $node->content['addtocal'] = addtocal_render(
+      $info['title'],
+      $info['description'],
+      $info['url'],
+      $info['location'],
+      $info['start'],
+      $info['end']
+    );
   }
+}
+
+/**
+ * Return event information in an associative array based on a given node.
+ *
+ * @param $node
+ *
+ * @return array
+ */
+function addtocal_extract_event_info($node) {
+  $dates = field_get_items('node', $node, 'field_event_date');
+  $start_date = $dates[0]['value'];
+  $end_date = $dates[0]['value2'];
+
+  $location = field_get_items('node', $node, 'field_event_location_title');
+	$location = check_plain($location[0]['value']);
+
+	$body = field_get_items('node', $node, 'body');
+  $description = str_replace(PHP_EOL, " ", text_summary($body[0]['value'], $body[0]['format']));
+
+  $uri = entity_uri('node', $node);
+
+	return array (
+    'title' => check_plain($node->title),
+		'start' => $start_date,
+    'end' => $end_date,
+		'location' => $location,
+		'description' => $description,
+    'url' => $uri['path']
+	);
 }
 
 /**
@@ -30,11 +62,9 @@ function addtocal_node_view($node, $view_mode, $langcode) {
  *
  * @return array
  */
-function addtocal_render($node_type, $node, $location, $start_date, $end_date) {
-  $label = $node->title;
-  $uri = entity_uri('node', $node);
+function addtocal_render($label, $description, $url, $location, $start_date, $end_date) {
   $rfc_dates = addtocal_rfc_3339_date($start_date, $end_date);
-  
+
   $google_url = url('http://www.google.com/calendar/event', array(
     'query' => array(
       'action' => 'TEMPLATE',
@@ -44,7 +74,7 @@ function addtocal_render($node_type, $node, $location, $start_date, $end_date) {
       'location' => $location,
     ),
   ));
-  
+
   $yahoo_url = url('http://calendar.yahoo.com/', array(
     'query' => array(
       'v' => 60,
@@ -56,8 +86,8 @@ function addtocal_render($node_type, $node, $location, $start_date, $end_date) {
     ),
   ));
 
-  $ical_url = $uri['path'] . '/addtocal.ics';
-  
+  $ical_url = $url . '/addtocal.ics';
+
   return array(
     '#weight' => 10,
     'button' => array(
@@ -99,7 +129,7 @@ function addtocal_menu() {
     'page arguments' => array(1),
     'access arguments' => array('access content'),
   );
-  
+
   return $items;
 }
 
@@ -116,22 +146,22 @@ function addtocal_menu() {
 function addtocal_rfc_3339_date($start, $end) {
   if (!$end)
     $end = $start;
-  
+
   $start_timestamp = strtotime($start . 'UTC');
   $end_timestamp = strtotime($end . 'UTC');
-  
+
   $diff_timestamp = $end_timestamp - $start_timestamp;
-  
+
   $start_date = gmdate('Ymd', $start_timestamp) . 'T' . gmdate('His', $start_timestamp) . 'Z';
   $local_start_date = date('Ymd', $start_timestamp) . 'T' . date('His', $start_timestamp) . '';
   $end_date = gmdate('Ymd', $end_timestamp) . 'T' . gmdate('His', $end_timestamp) . 'Z';
   $local_end_date = date('Ymd', $end_timestamp) . 'T' . date('His', $end_timestamp) . '';
-  
+
   $diff_hours = str_pad(round(($diff_timestamp / 60) / 60), 2, '0', STR_PAD_LEFT);
   $diff_minutes = str_pad(abs(round($diff_timestamp / 60) - ($diff_hours * 60)), 2, '0', STR_PAD_LEFT);
-  
+
   $duration = $diff_hours . $diff_minutes;
-  
+
   return array(
     'start' => $start_date,
     'end' => $end_date,
@@ -149,15 +179,11 @@ function addtocal_rfc_3339_date($start, $end) {
  */
 function addtocal_download_ics($node) {
   drupal_add_http_header('Content-Type', 'application/calendar; charset=utf-8');
-  
-  $body = field_get_items('node', $node, 'body');
-  $dates = field_get_items('node', $node, 'field_event_date');
-  $location = field_get_items('node', $node, 'field_event_location_title');
-  
-  $description = str_replace(PHP_EOL, " ", text_summary($body[0]['value'], $body[0]['format']));
-  
-  $rfc_dates = addtocal_rfc_3339_date($dates[0]['value'], $dates[0]['value2']);
-  
+
+  $info = addtocal_extract_event_info($node);
+
+  $rfc_dates = addtocal_rfc_3339_date($info['start'], $info['end']);
+
   echo 'BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//hacksw/handcal//NONSGML v1.0//EN
@@ -166,9 +192,9 @@ UID:event-' . $node->nid . '@' . $_SERVER['HTTP_HOST'] . '
 DTSTAMP:' . $rfc_dates['start'] . '
 DTSTART:' . $rfc_dates['start'] . '
 DTEND:' . $rfc_dates['end'] . '
-SUMMARY:' . check_plain($node->title) . '
-DESCRIPTION: ' . $description . '
-LOCATION:' . check_plain($location[0]['value']) . '
+SUMMARY:' . $info['title'] . '
+DESCRIPTION: ' . $info['description'] . '
+LOCATION:' . $info['location'] . '
 END:VEVENT
 END:VCALENDAR';
 
