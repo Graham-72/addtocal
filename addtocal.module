@@ -35,21 +35,21 @@ function addtocal_extract_event_info($node) {
   $end_date = $dates[0]['value2'];
 
   $location = field_get_items('node', $node, 'field_event_location_title');
-	$location = check_plain($location[0]['value']);
+  $location = check_plain($location[0]['value']);
 
-	$body = field_get_items('node', $node, 'body');
+  $body = field_get_items('node', $node, 'body');
   $description = str_replace(PHP_EOL, " ", text_summary($body[0]['value'], $body[0]['format']));
 
   $uri = entity_uri('node', $node);
 
-	return array (
+  return array(
     'title' => check_plain($node->title),
-		'start' => $start_date,
+    'start' => $start_date,
     'end' => $end_date,
-		'location' => $location,
-		'description' => $description,
+    'location' => $location,
+    'description' => $description,
     'url' => $uri['path']
-	);
+  );
 }
 
 /**
@@ -144,8 +144,9 @@ function addtocal_menu() {
  * @return array
  */
 function addtocal_rfc_3339_date($start, $end) {
-  if (!$end)
+  if (!$end) {
     $end = $start;
+  }
 
   $start_timestamp = strtotime($start . 'UTC');
   $end_timestamp = strtotime($end . 'UTC');
