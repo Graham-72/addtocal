@@ -35,11 +35,12 @@ function addtocal_extract_event_info($node) {
   $start_date = $dates[0]['value'];
   $end_date = $dates[0]['value2'];
 
-  $location = field_get_items('node', $node, variable_get('addtocal_location_field', 'field_event_location_title'));
+  $location = field_get_items('node', $node, variable_get('addtocal_location_field', 'field_location_title'));
   $location = ($location) ? check_plain($location[0]['value']) : '';
 
-  $body = field_get_items('node', $node, 'body');
-  $description = str_replace(PHP_EOL, " ", text_summary($body[0]['value'], $body[0]['format']));
+  //$body = field_get_items('node', $node, 'body');
+  //$description = str_replace(PHP_EOL, " ", text_summary($body[0]['value'], $body[0]['format']));
+	$description = '';
 
   $uri = entity_uri('node', $node);
 
