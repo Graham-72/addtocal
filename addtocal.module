@@ -24,10 +24,11 @@ function addtocal_menu() {
 function addtocal_field_formatter_info() {
   return array(
     'addtocal_view' => array(
-      'label' => t('AddToCal'),
+      'label' => t('Add To Cal'),
       'field types' => array('datetime'),
       'settings' => array(
         'location_field' => -1,
+        'past_events' => FALSE,
       ),
     ),
   );
@@ -91,6 +92,13 @@ function addtocal_field_formatter_settings_form($field, $instance, $view_mode, $
     '#description' => 'A field to use as the location for calendar events.',
   );
   
+  $element['past_events'] = array(
+    '#title' => t('Show for Past Events'),
+    '#type' => 'checkbox',
+    '#default_value' => $settings['past_events'],
+    '#description' => 'Show the widget for past events.',
+  );
+  
   return $element;
 }
 
@@ -108,7 +116,13 @@ function addtocal_field_formatter_settings_summary($field, $instance, $view_mode
     $output = $settings['location_field'];
   }
 
-  return t('Location field: !field', array('!field' => $output));
+  $output = t('Location field: !field', array('!field' => $output));
+  
+  if ($settings['past_events'] == 1) {
+    $output .= '<br />' . t('Showing the widget for past events.');
+  }
+  
+  return $output;
 }
 
 /**
@@ -123,8 +137,13 @@ function addtocal_extract_event_info($node, $location_field) {
   $start_date = $dates[0]['value'];
   $end_date = $dates[0]['value2'];
   
-  $location = field_get_items('node', $node, $location_field);
-  $location = ($location) ? check_plain($location[0]['value']) : '';
+  if (!empty($location_field)) {
+    $location = field_get_items('node', $node, $location_field);
+    $location = ($location) ? check_plain($location[0]['value']) : '';
+  }
+  else {
+    
+  }
   
   $description = '';
 
