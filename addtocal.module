@@ -5,6 +5,20 @@
  */
 
 /**
+ * Implements hook_menu().
+ */
+function addtocal_menu() {
+  $items['node/%node/%/addtocal.ics'] = array(
+    'title' => 'Download Event',
+    'page callback' => 'addtocal_download_ics',
+    'page arguments' => array(1, 2),
+    'access arguments' => array('access content'),
+  );
+
+  return $items;
+}
+
+/**
  * Implements hook_field_formatter_info().
  */
 function addtocal_field_formatter_info() {
@@ -50,21 +64,8 @@ function addtocal_field_formatter_view($entity_type, $entity, $field, $instance,
   return $element;
 }
 
-function addtocal_field_formatter_settings_summary($field, $instance, $view_mode) {
-  $display = $instance['display'][$view_mode];
-  $settings = $display['settings'];
-  
-  if ($settings['location_field'] == -1) {
-    $output = 'None';
-  }
-  else {
-    $output = $settings['location_field'];
-  }
-  
-  return t('Location field: !field', array('!field' => $output));
-}
-/*
- * hook_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state).
+/**
+ * Implements hook_field_formatter_settings_form().
  */
 function addtocal_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
   $bundle_name = $field['bundles']['node'][0];
@@ -91,6 +92,23 @@ function addtocal_field_formatter_settings_form($field, $instance, $view_mode, $
   );
   
   return $element;
+}
+
+/**
+ * Implements hook_field_formatter_settings_summary().
+ */
+function addtocal_field_formatter_settings_summary($field, $instance, $view_mode) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+
+  if ($settings['location_field'] == -1) {
+    $output = 'None';
+  }
+  else {
+    $output = $settings['location_field'];
+  }
+
+  return t('Location field: !field', array('!field' => $output));
 }
 
 /**
@@ -194,20 +212,6 @@ function addtocal_render($label, $description, $url, $location, $start_date, $en
 }
 
 /**
- * Implements hook_menu().
- */
-function addtocal_menu() {
-  $items['node/%node/%/addtocal.ics'] = array(
-    'title' => 'Download Event',
-    'page callback' => 'addtocal_download_ics',
-    'page arguments' => array(1, 2),
-    'access arguments' => array('access content'),
-  );
-
-  return $items;
-}
-
-/**
  * Returns an array containing RFC 3339 formatted start and end dates.
  *
  * @param $start
@@ -274,11 +278,4 @@ END:VEVENT
 END:VCALENDAR';
 
   exit();
-}
-
-/*
- * Implements hook_field_info().
- */
-function addtocal_field_info() {
-  
 }
