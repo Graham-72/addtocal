@@ -125,10 +125,8 @@ function addtocal_extract_event_info($node, $location_field) {
   
   $location = field_get_items('node', $node, $location_field);
   $location = ($location) ? check_plain($location[0]['value']) : '';
-
-  //$body = field_get_items('node', $node, 'body');
-  //$description = str_replace(PHP_EOL, " ", text_summary($body[0]['value'], $body[0]['format']));
-	$description = '';
+  
+  $description = '';
 
   $uri = entity_uri('node', $node);
 
