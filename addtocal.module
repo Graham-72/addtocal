@@ -27,17 +27,21 @@ function addtocal_field_formatter_view($entity_type, $entity, $field, $instance,
   
   switch ($display['type']) {
     case 'addtocal_view':
-      $element = date_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display);
+      $element = array();
+      $date_element = date_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display);
+      
+      $element[0]['date'] = $date_element[0];
+      
+      $info = addtocal_extract_event_info($entity, $display['settings']['location_field']);
 
-      $info = addtocal_extract_event_info($entity);
-
-      $element['addtocal'] = addtocal_render(
+      $element[0] += addtocal_render(
         $info['title'],
         $info['description'],
         $info['url'],
         $info['location'],
         $info['start'],
-        $info['end']
+        $info['end'],
+        $display['settings']['location_field']
       );
       
       break;
@@ -90,25 +94,6 @@ function addtocal_field_formatter_settings_form($field, $instance, $view_mode, $
 }
 
 /**
- * Implements hook_node_view().
- */
-function addtocal_node_view($node, $view_mode, $langcode) {
-  /*$event_types = variable_get('addtocal_node_types', array('event'));
-  if (in_array($node->type, $event_types) && $view_mode == 'full') {
-    $info = addtocal_extract_event_info($node);
-
-    $node->content['addtocal'] = addtocal_render(
-      $info['title'],
-      $info['description'],
-      $info['url'],
-      $info['location'],
-      $info['start'],
-      $info['end']
-    );
-  }*/
-}
-
-/**
  * Return event information in an associative array based on a given node.
  *
  * @param $node
@@ -120,7 +105,7 @@ function addtocal_extract_event_info($node, $location_field) {
   $start_date = $dates[0]['value'];
   $end_date = $dates[0]['value2'];
   
-  $location = field_get_items('node', $node, variable_get('addtocal_location_field', 'field_location_title'));
+  $location = field_get_items('node', $node, $location_field);
   $location = ($location) ? check_plain($location[0]['value']) : '';
 
   //$body = field_get_items('node', $node, 'body');
@@ -149,7 +134,7 @@ function addtocal_extract_event_info($node, $location_field) {
  *
  * @return array
  */
-function addtocal_render($label, $description, $url, $location, $start_date, $end_date) {
+function addtocal_render($label, $description, $url, $location, $start_date, $end_date, $location_field) {
   $rfc_dates = addtocal_rfc_3339_date($start_date, $end_date);
 
   $google_url = url('http://www.google.com/calendar/event', array(
@@ -175,10 +160,10 @@ function addtocal_render($label, $description, $url, $location, $start_date, $en
     ),
   ));
 
-  $ical_url = $url . '/addtocal.ics';
+  $ical_url = $url . '/' . $location_field . '/addtocal.ics';
 
   return array(
-    '#weight' => 10,
+//    '#weight' => 10,
     'button' => array(
       '#markup' => t('Add to Calendar'),
       '#prefix' => '<div id="addtocal">',
@@ -212,10 +197,10 @@ function addtocal_render($label, $description, $url, $location, $start_date, $en
  * Implements hook_menu().
  */
 function addtocal_menu() {
-  $items['node/%node/addtocal.ics'] = array(
+  $items['node/%node/%/addtocal.ics'] = array(
     'title' => 'Download Event',
     'page callback' => 'addtocal_download_ics',
-    'page arguments' => array(1),
+    'page arguments' => array(1, 2),
     'access arguments' => array('access content'),
   );
 
@@ -267,10 +252,10 @@ function addtocal_rfc_3339_date($start, $end) {
  *
  * Outputs an ICS file containing event information for the selected node.
  */
-function addtocal_download_ics($node) {
+function addtocal_download_ics($node, $location_field) {
   drupal_add_http_header('Content-Type', 'application/calendar; charset=utf-8');
-
-  $info = addtocal_extract_event_info($node);
+  
+  $info = addtocal_extract_event_info($node, $location_field);
 
   $rfc_dates = addtocal_rfc_3339_date($info['start'], $info['end']);
 
