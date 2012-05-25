@@ -8,10 +8,10 @@
  * Implements hook_menu().
  */
 function addtocal_menu() {
-  $items['node/%node/%/addtocal.ics'] = array(
+  $items['addtocal/%/%/%/addtocal.ics'] = array(
     'title' => 'Download Event',
     'page callback' => 'addtocal_download_ics',
-    'page arguments' => array(1, 2),
+    'page arguments' => array(1, 2, 3),
     'access arguments' => array('access content'),
   );
 
@@ -47,7 +47,7 @@ function addtocal_field_formatter_view($entity_type, $entity, $field, $instance,
       
       $element[0]['date'] = $date_element[0];
       
-      $info = addtocal_extract_event_info($entity, $display['settings']['location_field']);
+      $info = addtocal_extract_event_info($entity_type, $entity, $entity_id, $display['settings']['location_field']);
       $dates = field_get_items($entity_type, $entity, 'field_event_date');
       
       $start_date = $dates[(count($dates) - 1)]['value'];
@@ -58,7 +58,8 @@ function addtocal_field_formatter_view($entity_type, $entity, $field, $instance,
         $element[0] += addtocal_render(
           $info['title'],
           $info['description'],
-          $info['url'],
+          $info['entity_type'],
+          $info['entity_id'],
           $info['location'],
           $info['start'],
           $info['end'],
@@ -135,50 +136,55 @@ function addtocal_field_formatter_settings_summary($field, $instance, $view_mode
 }
 
 /**
- * Return event information in an associative array based on a given node.
+ * Return event information in an associative array based on a given entity.
  *
- * @param $node
+ * @param $entity
+ * @param $entity_type
+ * @param $location_field
  *
  * @return array
  */
-function addtocal_extract_event_info($node, $location_field) {
-  $dates = field_get_items('node', $node, variable_get('addtocal_date_field', 'field_event_date'));
+function addtocal_extract_event_info($entity_type, $entity, $entity_id = NULL,  $location_field) {
+  
+  $entity = $entity;
+  
+  $dates = field_get_items($entity_type, $entity[$entity_id], 'field_event_date');
   $start_date = $dates[0]['value'];
   $end_date = $dates[0]['value2'];
   
   if (!empty($location_field)) {
-    $location = field_get_items('node', $node, $location_field);
+    $location = field_get_items($entity_type, $entity[$entity_id], $location_field);
     $location = ($location) ? check_plain($location[0]['value']) : '';
   }
   else {
-    
+    $location = '';
   }
   
+  //@TODO: Make description work again
   $description = '';
 
-  $uri = entity_uri('node', $node);
-
   return array(
-    'title' => check_plain($node->title),
+    'title' => check_plain($entity->title),
     'start' => $start_date,
     'end' => $end_date,
     'location' => $location,
     'description' => $description,
-    'url' => $uri['path']
+    'entity_id' => $entity_id,
+    'entity_type' => $entity_type,
   );
 }
 
 /**
  * Generate a render array for the addtocal widget.
  *
- * @param $node
+ * @param $label
  * @param $location
  * @param $dates
  *   Array containing start and end dates.
  *
  * @return array
  */
-function addtocal_render($label, $description, $url, $location, $start_date, $end_date, $location_field) {
+function addtocal_render($label, $description, $entity_type, $entity_id, $location, $start_date, $end_date, $location_field) {
   $rfc_dates = addtocal_rfc_3339_date($start_date, $end_date);
 
   $google_url = url('http://www.google.com/calendar/event', array(
@@ -204,7 +210,7 @@ function addtocal_render($label, $description, $url, $location, $start_date, $en
     ),
   ));
 
-  $ical_url = $url . '/' . $location_field . '/addtocal.ics';
+  $ical_url = 'addtocal/' . $entity_type . '/' . $entity_id . '/' . $location_field . '/addtocal.ics';
 
   return array(
 //    '#weight' => 10,
@@ -278,14 +284,16 @@ function addtocal_rfc_3339_date($start, $end) {
 }
 
 /**
- * Implements hook_node_view().
- *
- * Outputs an ICS file containing event information for the selected node.
+ * Outputs an ICS file containing event information for the selected entity.
  */
-function addtocal_download_ics($node, $location_field) {
+function addtocal_download_ics($entity_type, $entity_id, $location_field) {
   drupal_add_http_header('Content-Type', 'application/calendar; charset=utf-8');
+  $entity = entity_load($entity_type, array($entity_id));
+
   
-  $info = addtocal_extract_event_info($node, $location_field);
+  $info = addtocal_extract_event_info($entity_type, $entity, $entity_id, $location_field);
+  
+  //return array('#markup' => 'hello');
 
   $rfc_dates = addtocal_rfc_3339_date($info['start'], $info['end']);
 
@@ -293,7 +301,7 @@ function addtocal_download_ics($node, $location_field) {
 VERSION:2.0
 PRODID:-//hacksw/handcal//NONSGML v1.0//EN
 BEGIN:VEVENT
-UID:event-' . $node->nid . '@' . $_SERVER['HTTP_HOST'] . '
+UID:' . $entity_type . '-' . $entity_id . '@' . $_SERVER['HTTP_HOST'] . '
 DTSTAMP:' . $rfc_dates['start'] . '
 DTSTART:' . $rfc_dates['start'] . '
 DTEND:' . $rfc_dates['end'] . '
