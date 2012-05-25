@@ -24,7 +24,7 @@ function addtocal_menu() {
 function addtocal_field_formatter_info() {
   return array(
     'addtocal_view' => array(
-      'label' => t('Add To Cal'),
+      'label' => t('Add to Cal'),
       'field types' => array('datetime'),
       'settings' => array(
         'location_field' => -1,
@@ -48,16 +48,25 @@ function addtocal_field_formatter_view($entity_type, $entity, $field, $instance,
       $element[0]['date'] = $date_element[0];
       
       $info = addtocal_extract_event_info($entity, $display['settings']['location_field']);
-
-      $element[0] += addtocal_render(
-        $info['title'],
-        $info['description'],
-        $info['url'],
-        $info['location'],
-        $info['start'],
-        $info['end'],
-        $display['settings']['location_field']
-      );
+      $dates = field_get_items($entity_type, $entity, 'field_event_date');
+      
+      $start_date = $dates['0']['value'];
+      
+      // Check setting for past events and show widget accordingly
+      if (strtotime($start_date) >= time() ||
+        ($display['settings']['past_events'] == TRUE && strtotime($start_date) < time())) {
+        $element[0] += addtocal_render(
+          $info['title'],
+          $info['description'],
+          $info['url'],
+          $info['location'],
+          $info['start'],
+          $info['end'],
+          $display['settings']['location_field']
+        );
+      }
+      
+      
       
       break;
   }
@@ -69,12 +78,12 @@ function addtocal_field_formatter_view($entity_type, $entity, $field, $instance,
  * Implements hook_field_formatter_settings_form().
  */
 function addtocal_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
-  $bundle_name = $field['bundles']['node'][0];
+  $bundle_name = $field['bundles'][$instance['entity_type']][0];
   
   $display = $instance['display'][$view_mode];
   $settings = $display['settings'];
   
-  $field_list = field_info_instances('node', $bundle_name);
+  $field_list = field_info_instances($instance['entity_type'], $bundle_name);
   
   $options = array('-1' => 'None');
   
