@@ -8,10 +8,10 @@
  * Implements hook_menu().
  */
 function addtocal_menu() {
-  $items['addtocal/%/%/%/addtocal.ics'] = array(
+  $items['addtocal/%/%/%/%/addtocal.ics'] = array(
     'title' => 'Download Event',
     'page callback' => 'addtocal_download_ics',
-    'page arguments' => array(1, 2, 3),
+    'page arguments' => array(1, 2, 3, 4),
     'access arguments' => array('access content'),
   );
 
@@ -28,6 +28,7 @@ function addtocal_field_formatter_info() {
       'field types' => array('datetime'),
       'settings' => array(
         'location_field' => -1,
+        'description_field' => -1,
         'past_events' => FALSE,
       ),
     ),
@@ -47,7 +48,9 @@ function addtocal_field_formatter_view($entity_type, $entity, $field, $instance,
       
       $element[0]['date'] = $date_element[0];
       
-      $info = addtocal_extract_event_info($entity_type, $entity, $entity_id, $display['settings']['location_field']);
+      list($entity_id) = entity_extract_ids($entity_type, $entity);
+      
+      $info = addtocal_extract_event_info($entity_type, $entity, $entity_id, $display['settings']['location_field'], $display['settings']['description_field']);
       $dates = field_get_items($entity_type, $entity, 'field_event_date');
       
       $start_date = $dates[(count($dates) - 1)]['value'];
@@ -63,11 +66,10 @@ function addtocal_field_formatter_view($entity_type, $entity, $field, $instance,
           $info['location'],
           $info['start'],
           $info['end'],
-          $display['settings']['location_field']
+          $display['settings']['location_field'],
+          $display['settings']['description_field']
         );
       }
-      
-      
       
       break;
   }
@@ -86,20 +88,32 @@ function addtocal_field_formatter_settings_form($field, $instance, $view_mode, $
   
   $field_list = field_info_instances($instance['entity_type'], $bundle_name);
   
-  $options = array('-1' => 'None');
+  $description_options = $location_options = array('-1' => 'None');
   
   foreach ($field_list as $field) {
     if ($field['widget']['type'] == 'text_textfield') {
-      $options[$field['field_name']] = $field['label'];
+      $location_options[$field['field_name']] = $field['label'];
+    }
+
+    if ($field['widget']['type'] == 'text_textarea' || $field['widget']['type'] == 'text_textarea_with_summary') {
+      $description_options[$field['field_name']] = $field['label'];
     }
   }
   
   $element['location_field'] = array(
     '#title' => t('Location Field'),
     '#type' => 'select',
-    '#options' => $options,
+    '#options' => $location_options,
     '#default_value' => $settings['location_field'],
     '#description' => 'A field to use as the location for calendar events.',
+  );
+
+  $element['description_field'] = array(
+    '#title' => t('Description Field'),
+    '#type' => 'select',
+    '#options' => $description_options,
+    '#default_value' => $settings['description_field'],
+    '#description' => 'A field to use as the description for calendar events.',
   );
   
   $element['past_events'] = array(
@@ -120,13 +134,23 @@ function addtocal_field_formatter_settings_summary($field, $instance, $view_mode
   $settings = $display['settings'];
 
   if ($settings['location_field'] == -1) {
-    $output = 'None';
+    $location_output = 'None';
   }
   else {
-    $output = $settings['location_field'];
+    $location_output = $settings['location_field'];
   }
 
-  $output = t('Location field: !field', array('!field' => $output));
+  if ($settings['description_field'] == -1) {
+    $description_output = 'None';
+  }
+  else {
+    $description_output = $settings['description_field'];
+  }
+
+  $location_output = t('Location field: !field', array('!field' => $location_output));
+  $description_output = t('Description field: !field', array('!field' => $description_output));
+  
+  $output = $location_output . ', ' . $description_output;
   
   if ($settings['past_events'] == 1) {
     $output .= '<br />' . t('Showing the widget for past events.');
@@ -136,33 +160,45 @@ function addtocal_field_formatter_settings_summary($field, $instance, $view_mode
 }
 
 /**
+ * Return the value of a field
+ * 
+ * @param $entity_type
+ * @param $entity
+ * @param $field_name
+ * @return string
+ */
+function addtocal_field_get_value($entity_type, $entity, $field_name) {
+  if (!empty($field_name)) {
+    $value = field_get_items($entity_type, $entity, $field_name);
+    $value = ($value) ? check_plain($value[0]['value']) : '';
+    
+    return $value;
+  }
+  else {
+    return '';
+  }
+}
+
+/**
  * Return event information in an associative array based on a given entity.
  *
  * @param $entity
  * @param $entity_type
  * @param $location_field
+ * @param $description_field
  *
  * @return array
  */
-function addtocal_extract_event_info($entity_type, $entity, $entity_id = NULL,  $location_field) {
-  
-  $entity = $entity;
-  
-  $dates = field_get_items($entity_type, $entity[$entity_id], 'field_event_date');
+function addtocal_extract_event_info($entity_type, $entity, $entity_id = NULL, $location_field, $description_field) {
+  $dates = field_get_items($entity_type, $entity, 'field_event_date');
   $start_date = $dates[0]['value'];
   $end_date = $dates[0]['value2'];
   
-  if (!empty($location_field)) {
-    $location = field_get_items($entity_type, $entity[$entity_id], $location_field);
-    $location = ($location) ? check_plain($location[0]['value']) : '';
-  }
-  else {
-    $location = '';
-  }
+  $location = addtocal_field_get_value($entity_type, $entity, $location_field);
+  $description = addtocal_field_get_value($entity_type, $entity, $description_field);
+  $uri = entity_uri($entity_type, $entity);
+  $url = $uri['path'];
   
-  //@TODO: Make description work again
-  $description = '';
-
   return array(
     'title' => check_plain($entity->title),
     'start' => $start_date,
@@ -171,6 +207,7 @@ function addtocal_extract_event_info($entity_type, $entity, $entity_id = NULL,  
     'description' => $description,
     'entity_id' => $entity_id,
     'entity_type' => $entity_type,
+    'url' => $url,
   );
 }
 
@@ -184,7 +221,7 @@ function addtocal_extract_event_info($entity_type, $entity, $entity_id = NULL,  
  *
  * @return array
  */
-function addtocal_render($label, $description, $entity_type, $entity_id, $location, $start_date, $end_date, $location_field) {
+function addtocal_render($label, $description, $entity_type, $entity_id, $location, $start_date, $end_date, $location_field, $description_field) {
   $rfc_dates = addtocal_rfc_3339_date($start_date, $end_date);
 
   $google_url = url('http://www.google.com/calendar/event', array(
@@ -210,10 +247,9 @@ function addtocal_render($label, $description, $entity_type, $entity_id, $locati
     ),
   ));
 
-  $ical_url = 'addtocal/' . $entity_type . '/' . $entity_id . '/' . $location_field . '/addtocal.ics';
+  $ical_url = 'addtocal/' . $entity_type . '/' . $entity_id . '/' . $location_field . '/' . $description_field . '/addtocal.ics';
 
   return array(
-//    '#weight' => 10,
     'button' => array(
       '#markup' => t('Add to Calendar'),
       '#prefix' => '<div id="addtocal">',
@@ -286,15 +322,14 @@ function addtocal_rfc_3339_date($start, $end) {
 /**
  * Outputs an ICS file containing event information for the selected entity.
  */
-function addtocal_download_ics($entity_type, $entity_id, $location_field) {
+function addtocal_download_ics($entity_type, $entity_id, $location_field, $description_field) {
   drupal_add_http_header('Content-Type', 'application/calendar; charset=utf-8');
-  $entity = entity_load($entity_type, array($entity_id));
-
   
-  $info = addtocal_extract_event_info($entity_type, $entity, $entity_id, $location_field);
+  $entity_array = entity_load($entity_type, array($entity_id));
+  $entity = $entity_array[$entity_id];
   
-  //return array('#markup' => 'hello');
-
+  $info = addtocal_extract_event_info($entity_type, $entity, $entity_id, $location_field, $description_field);
+  
   $rfc_dates = addtocal_rfc_3339_date($info['start'], $info['end']);
 
   echo 'BEGIN:VCALENDAR
