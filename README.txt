@@ -11,13 +11,7 @@ Provides a widget containing links for exporting events to:
 
 ## Settings
 All settings are set in the field formatter settings in _Manage Display_ for the selected entity type.
-### Location Field
-You can optionally choose a location field in the format settings view. This option will choose which of the entity's fields will populate the location value for calendar export.
 
-### Show for Past Events
-Determines whether the widget will be displayed for past events.
-
-## Caveats
-Currently only works with nodes, but will soon be extended to other entity types.
-
-The module assumes that 'body' is used for the event description.
+* **Location Field**: An optional field to use as the location in calendar events.
+* **Description Field**: An optional field to use as a description in calendar events.
+* **Show for Past Events**: Determines whether the widget will be displayed for past events.
