@@ -66,6 +66,7 @@ function addtocal_field_formatter_view($entity_type, $entity, $field, $instance,
           $info['location'],
           $info['start'],
           $info['end'],
+          $info['url'],
           $display['settings']['location_field'],
           $display['settings']['description_field']
         );
@@ -221,7 +222,7 @@ function addtocal_extract_event_info($entity_type, $entity, $entity_id = NULL, $
  *
  * @return array
  */
-function addtocal_render($label, $description, $entity_type, $entity_id, $location, $start_date, $end_date, $location_field, $description_field) {
+function addtocal_render($label, $description, $entity_type, $entity_id, $location, $start_date, $end_date, $url, $location_field, $description_field) {
   $rfc_dates = addtocal_rfc_3339_date($start_date, $end_date);
 
   $google_url = url('http://www.google.com/calendar/event', array(
