@@ -8,14 +8,40 @@
  * Implements hook_menu().
  */
 function addtocal_menu() {
-  $items['addtocal/%/%/%/%/addtocal.ics'] = array(
-    'title' => 'Download Event',
-    'page callback' => 'addtocal_download_ics',
-    'page arguments' => array(1, 2, 3, 4),
-    'access arguments' => array('access content'),
-  );
+  $items = array();
+  
+  foreach(addtocal_get_addtocal_instances() as $instance) {
+    $items[$instance['entity'] . '/%entity_object/addtocal.ics'] = array(
+      'title' => 'Download Event',
+      'page callback' => 'addtocal_download_ics',
+      'page arguments' => array(1, 2, 3, 4),
+      'access arguments' => array('access content'),
+    );
+  }
 
   return $items;
+}
+
+function addtocal_get_addtocal_instances() {
+  $entities = field_info_instances();
+  $allowed_entity_types = array();
+
+  foreach ($entities as $entity_name => $entity) {
+    foreach ($entity as $bundle_name => $bundle) {
+      foreach ($bundle as $field_name => $field) {
+        foreach ($field['display'] as $display_name => $display) {
+          if ($display['type'] == 'addtocal_view') {
+            $allowed_entity_types[] = array(
+              'entity' => $entity_name,
+              'bundle' => $bundle_name,
+            );
+          }
+        }
+      }
+    }
+  }
+  
+  return $allowed_entity_types;
 }
 
 /**
@@ -44,8 +70,6 @@ function addtocal_field_formatter_info() {
  * Implements hook_field_formatter_view().
  */
 function addtocal_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
-  $element = array();
-  
   switch ($display['type']) {
     case 'addtocal_view':
       $element = array();
@@ -76,11 +100,11 @@ function addtocal_field_formatter_view($entity_type, $entity, $field, $instance,
           $display['settings']['description_field']
         );
       }
+
+      return $element;
       
       break;
   }
-  
-  return $element;
 }
 
 /**
