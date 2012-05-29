@@ -79,7 +79,7 @@ function addtocal_field_formatter_view($entity_type, $entity, $field, $instance,
       
       list($entity_id) = entity_extract_ids($entity_type, $entity);
       
-      $info = addtocal_extract_event_info($entity_type, $entity, $entity_id, $display['settings']['location_field'], $display['settings']['description_field']);
+      $info = addtocal_extract_event_info($entity_type, $entity, $entity_id, $field['field_name']);
       $dates = field_get_items($entity_type, $entity, 'field_event_date');
       
       $start_date = $dates[(count($dates) - 1)]['value'];
@@ -247,7 +247,8 @@ function addtocal_field_get_value($entity_type, $entity, $field_name) {
  * @return array
  */
 function addtocal_extract_event_info($entity_type, $entity, $entity_id = NULL, $field_name) {
-  $dates = field_get_items($entity_type, $entity, 'field_event_date');
+  $dates = field_get_items($entity_type, $entity, $field_name);
+  
   $start_date = $dates[0]['value'];
   $end_date = $dates[0]['value2'];
   
