@@ -224,8 +224,17 @@ function addtocal_field_get_value($entity_type, $entity, $field_name) {
     }
     else {
       //$value = ($value) ? check_plain($value[0]['value']) : '';
-      $output = str_replace('&nbsp;', ' ', $value[0]['value']);
-      $output = str_replace('<br />', '\n', $output);
+      $replace_strings = array(
+        '&nbsp;' => '',
+        '<br />' => '\n',
+        PHP_EOL => '\n',
+      );
+      
+      $output = $value[0]['value'];
+      
+      foreach ($replace_strings as $search => $replace) {
+        $output = str_replace($search, $replace, $output);
+      }
     }
     
     
