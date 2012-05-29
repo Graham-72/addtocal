@@ -119,8 +119,14 @@ function addtocal_field_formatter_settings_form($field, $instance, $view_mode, $
   
   $description_options = $location_options = array('-1' => 'None');
   
+  $location_field_types = array(
+    'text_textfield',
+    'addressfield_default',
+    'addressfield_standard',
+  );
+  
   foreach ($field_list as $field) {
-    if ($field['widget']['type'] == 'text_textfield') {
+    if (in_array($field['widget']['type'], $location_field_types)) {
       $location_options[$field['field_name']] = $field['label'];
     }
 
@@ -199,7 +205,30 @@ function addtocal_field_formatter_settings_summary($field, $instance, $view_mode
 function addtocal_field_get_value($entity_type, $entity, $field_name) {
   if (!empty($field_name)) {
     $value = field_get_items($entity_type, $entity, $field_name);
-    $value = ($value) ? check_plain($value[0]['value']) : '';
+    
+    $field_info = field_info_field($field_name);
+    
+    if ($field_info['type'] == 'addressfield') {
+      // Generate the addressfield format
+      $format = addressfield_generate($value[0], array('address'));
+      
+      // Render the addressfield into an array
+      $address = addressfield_render_address($format);
+      
+      //@TODO: Check for empty values so we don't have a bunch of stray commas and spaces
+      $string = $address['street_block']['throughfare']['#children'];
+      $string .= ' ' . $address['street_block']['premise']['#children'];
+      $string .= ', ' . $address['locality_block']['locality']['#children'];
+      $string .= ', ' . $address['locality_block']['administrative_area']['#children'];
+      $string .= ' ' . $address['locality_block']['postal_code']['#children'];
+      $string .= ', ' . $address['country']['#children'];
+      
+      return $string;
+    }
+    else {
+      $value = ($value) ? check_plain($value[0]['value']) : '';
+    }
+    
     
     return $value;
   }
@@ -364,7 +393,7 @@ function addtocal_rfc_3339_date($start, $end) {
  * Outputs an ICS file containing event information for the selected entity.
  */
 function addtocal_download_ics($entity, $field_name) {
-  drupal_add_http_header('Content-Type', 'application/calendar; charset=utf-8');
+  //drupal_add_http_header('Content-Type', 'application/calendar; charset=utf-8');
   
   // Get entity type from the current path
   $entity_type = arg(0);
@@ -372,8 +401,10 @@ function addtocal_download_ics($entity, $field_name) {
   list($entity_id) = entity_extract_ids($entity_type, $entity);
   $info = addtocal_extract_event_info($entity_type, $entity, $entity_id, $field_name);
   
-  $rfc_dates = addtocal_rfc_3339_date($info['start'], $info['end']);
+  dpm($info);
   
+  $rfc_dates = addtocal_rfc_3339_date($info['start'], $info['end']);
+  return array('#markup' => 'ohai');
   echo 'BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//hacksw/handcal//NONSGML v1.0//EN
