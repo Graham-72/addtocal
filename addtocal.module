@@ -23,6 +23,10 @@ function addtocal_menu() {
   return $items;
 }
 
+/**
+ * Returns a list of all eligible entities to use with Add to Cal.
+ * @return array
+ */
 function addtocal_get_addtocal_entities() {
   $entities = field_info_instances();
   $entity_names = array();
@@ -247,12 +251,11 @@ function addtocal_field_get_value($entity_type, $entity, $field_name) {
 
 /**
  * Return event information in an associative array based on a given entity.
- *
- * @param $entity
+ * 
  * @param $entity_type
- * @param $location_field
- * @param $description_field
- *
+ * @param $entity
+ * @param null $entity_id
+ * @param $field_name
  * @return array
  */
 function addtocal_extract_event_info($entity_type, $entity, $entity_id = NULL, $field_name) {
@@ -294,12 +297,14 @@ function addtocal_extract_event_info($entity_type, $entity, $entity_id = NULL, $
 
 /**
  * Generate a render array for the addtocal widget.
- *
+ * 
  * @param $label
+ * @param $description
  * @param $location
- * @param $dates
- *   Array containing start and end dates.
- *
+ * @param $start_date
+ * @param $end_date
+ * @param $url
+ * @param $ics_url
  * @return array
  */
 function addtocal_render($label, $description, $location, $start_date, $end_date, $url, $ics_url) {
@@ -400,6 +405,10 @@ function addtocal_rfc_3339_date($start, $end) {
 
 /**
  * Outputs an ICS file containing event information for the selected entity.
+ * Called by hook_menu.
+ * 
+ * @param $entity
+ * @param $field_name
  */
 function addtocal_download_ics($entity, $field_name) {
   drupal_add_http_header('Content-Type', 'application/calendar; charset=utf-8');
