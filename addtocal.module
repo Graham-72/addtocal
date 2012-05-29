@@ -219,15 +219,17 @@ function addtocal_field_get_value($entity_type, $entity, $field_name) {
       if (!empty($address['administrative_area'])) $string .= $address['administrative_area'] . ' ';
       if (!empty($address['postal_code'])) $string .= $address['postal_code'] . ', ';
       if (!empty($address['country'])) $string .= $address['country'];
-      
-      return $string;
+
+      $output = $string;
     }
     else {
-      $value = ($value) ? check_plain($value[0]['value']) : '';
+      //$value = ($value) ? check_plain($value[0]['value']) : '';
+      $output = str_replace('&nbsp;', ' ', $value[0]['value']);
+      $output = str_replace('<br />', '\n', $output);
     }
     
     
-    return $value;
+    return strip_tags($output);
   }
   else {
     return '';
@@ -390,7 +392,7 @@ function addtocal_rfc_3339_date($start, $end) {
  * Outputs an ICS file containing event information for the selected entity.
  */
 function addtocal_download_ics($entity, $field_name) {
-  //drupal_add_http_header('Content-Type', 'application/calendar; charset=utf-8');
+  drupal_add_http_header('Content-Type', 'application/calendar; charset=utf-8');
   
   // Get entity type from the current path
   $entity_type = arg(0);
@@ -398,10 +400,8 @@ function addtocal_download_ics($entity, $field_name) {
   list($entity_id) = entity_extract_ids($entity_type, $entity);
   $info = addtocal_extract_event_info($entity_type, $entity, $entity_id, $field_name);
   
-  dpm($info);
-  
   $rfc_dates = addtocal_rfc_3339_date($info['start'], $info['end']);
-  return array('#markup' => 'ohai');
+  
   echo 'BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//hacksw/handcal//NONSGML v1.0//EN
