@@ -10,38 +10,38 @@
 function addtocal_menu() {
   $items = array();
   
-  foreach(addtocal_get_addtocal_instances() as $instance) {
-    $items[$instance['entity'] . '/%entity_object/addtocal.ics'] = array(
+  foreach(addtocal_get_addtocal_entities() as $entity_name) {
+    $items[$entity_name . '/%entity_object/%/addtocal.ics'] = array(
+      'load arguments' => array($entity_name),
       'title' => 'Download Event',
       'page callback' => 'addtocal_download_ics',
-      'page arguments' => array(1, 2, 3, 4),
+      'page arguments' => array(1, 2),
       'access arguments' => array('access content'),
     );
   }
-
+  
   return $items;
 }
 
-function addtocal_get_addtocal_instances() {
+function addtocal_get_addtocal_entities() {
   $entities = field_info_instances();
-  $allowed_entity_types = array();
+  $entity_names = array();
 
   foreach ($entities as $entity_name => $entity) {
     foreach ($entity as $bundle_name => $bundle) {
       foreach ($bundle as $field_name => $field) {
         foreach ($field['display'] as $display_name => $display) {
           if ($display['type'] == 'addtocal_view') {
-            $allowed_entity_types[] = array(
-              'entity' => $entity_name,
-              'bundle' => $bundle_name,
-            );
+            if(!in_array($entity_name, $entity_names)) {
+              $entity_names[] = $entity_name;
+            }
           }
         }
       }
     }
   }
   
-  return $allowed_entity_types;
+  return $entity_names;
 }
 
 /**
@@ -84,20 +84,19 @@ function addtocal_field_formatter_view($entity_type, $entity, $field, $instance,
       
       $start_date = $dates[(count($dates) - 1)]['value'];
       
+      $ics_url = $entity_type . '/' . $entity_id . '/' . $field['field_name'] . '/addtocal.ics';
+      
       // Check setting for past events and show widget accordingly
       if (strtotime($start_date) >= time() ||
         ($display['settings']['past_events'] == TRUE && strtotime($start_date) < time())) {
         $element[0] += addtocal_render(
           $info['title'],
           $info['description'],
-          $info['entity_type'],
-          $info['entity_id'],
           $info['location'],
           $info['start'],
           $info['end'],
           $info['url'],
-          $display['settings']['location_field'],
-          $display['settings']['description_field']
+          $ics_url
         );
       }
 
@@ -219,13 +218,27 @@ function addtocal_field_get_value($entity_type, $entity, $field_name) {
  *
  * @return array
  */
-function addtocal_extract_event_info($entity_type, $entity, $entity_id = NULL, $location_field, $description_field) {
+function addtocal_extract_event_info($entity_type, $entity, $entity_id = NULL, $field_name) {
   $dates = field_get_items($entity_type, $entity, 'field_event_date');
   $start_date = $dates[0]['value'];
   $end_date = $dates[0]['value2'];
   
-  $location = addtocal_field_get_value($entity_type, $entity, $location_field);
-  $description = addtocal_field_get_value($entity_type, $entity, $description_field);
+  $entity_info = entity_get_info($entity_type);
+  
+  if (empty($entity_info['entity keys']['bundle'])) {
+    $bundle = $entity_type;
+  }
+  else {
+    $bundle = $entity->{$entity_info['entity keys']['bundle']};
+  }
+  
+  $instance = field_info_instance($entity_type, $field_name, $bundle);
+  
+  $display = field_get_display($instance, 'default', $entity);
+  
+  $location = addtocal_field_get_value($entity_type, $entity, $display['settings']['location_field']);
+  $description = addtocal_field_get_value($entity_type, $entity, $display['settings']['description_field']);
+  
   $uri = entity_uri($entity_type, $entity);
   $url = $uri['path'];
   
@@ -251,7 +264,7 @@ function addtocal_extract_event_info($entity_type, $entity, $entity_id = NULL, $
  *
  * @return array
  */
-function addtocal_render($label, $description, $entity_type, $entity_id, $location, $start_date, $end_date, $url, $location_field, $description_field) {
+function addtocal_render($label, $description, $location, $start_date, $end_date, $url, $ics_url) {
   $rfc_dates = addtocal_rfc_3339_date($start_date, $end_date);
 
   $google_url = url('http://www.google.com/calendar/event', array(
@@ -277,8 +290,6 @@ function addtocal_render($label, $description, $entity_type, $entity_id, $locati
     ),
   ));
 
-  $ical_url = 'addtocal/' . $entity_type . '/' . $entity_id . '/' . $location_field . '/' . $description_field . '/addtocal.ics';
-
   return array(
     'button' => array(
       '#markup' => t('Add to Calendar'),
@@ -290,8 +301,8 @@ function addtocal_render($label, $description, $entity_type, $entity_id, $locati
       '#weight' => 2,
       '#theme' => 'item_list',
       '#items' => array(
-        l(t('iCalendar'), $ical_url),
-        l(t('Outlook'), $ical_url),
+        l(t('iCalendar'), $ics_url),
+        l(t('Outlook'), $ics_url),
         l(t('Google'), $google_url, array('attributes' => array('target' => '_blank'))),
         l(t('Yahoo'), $yahoo_url, array('attributes' => array('target' => '_blank'))),
       ),
@@ -352,16 +363,17 @@ function addtocal_rfc_3339_date($start, $end) {
 /**
  * Outputs an ICS file containing event information for the selected entity.
  */
-function addtocal_download_ics($entity_type, $entity_id, $location_field, $description_field) {
+function addtocal_download_ics($entity, $field_name) {
   drupal_add_http_header('Content-Type', 'application/calendar; charset=utf-8');
   
-  $entity_array = entity_load($entity_type, array($entity_id));
-  $entity = $entity_array[$entity_id];
+  // Get entity type from the current path
+  $entity_type = arg(0);
   
-  $info = addtocal_extract_event_info($entity_type, $entity, $entity_id, $location_field, $description_field);
+  list($entity_id) = entity_extract_ids($entity_type, $entity);
+  $info = addtocal_extract_event_info($entity_type, $entity, $entity_id, $field_name);
   
   $rfc_dates = addtocal_rfc_3339_date($info['start'], $info['end']);
-
+  
   echo 'BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//hacksw/handcal//NONSGML v1.0//EN
