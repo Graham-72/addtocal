@@ -209,19 +209,16 @@ function addtocal_field_get_value($entity_type, $entity, $field_name) {
     $field_info = field_info_field($field_name);
     
     if ($field_info['type'] == 'addressfield') {
-      // Generate the addressfield format
-      $format = addressfield_generate($value[0], array('address'));
+      $address = $value[0];
       
-      // Render the addressfield into an array
-      $address = addressfield_render_address($format);
+      $string = '';
       
-      //@TODO: Check for empty values so we don't have a bunch of stray commas and spaces
-      $string = $address['street_block']['throughfare']['#children'];
-      $string .= ' ' . $address['street_block']['premise']['#children'];
-      $string .= ', ' . $address['locality_block']['locality']['#children'];
-      $string .= ', ' . $address['locality_block']['administrative_area']['#children'];
-      $string .= ' ' . $address['locality_block']['postal_code']['#children'];
-      $string .= ', ' . $address['country']['#children'];
+      if (!empty($address['thoroughfare'])) $string .= $address['thoroughfare'] . ' ';
+      if (!empty($address['premise'])) $string .= $address['premise'] . ', ';
+      if (!empty($address['locality'])) $string .= $address['locality'] . ', ';
+      if (!empty($address['administrative_area'])) $string .= $address['administrative_area'] . ' ';
+      if (!empty($address['postal_code'])) $string .= $address['postal_code'] . ', ';
+      if (!empty($address['country'])) $string .= $address['country'];
       
       return $string;
     }
