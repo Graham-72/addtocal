@@ -114,6 +114,7 @@ function addtocal_field_formatter_view($entity_type, $entity, $field, $instance,
  * Implements hook_field_formatter_settings_form().
  */
 function addtocal_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
+  
   $bundle_name = $field['bundles'][$instance['entity_type']][0];
   
   $display = $instance['display'][$view_mode];
@@ -140,28 +141,40 @@ function addtocal_field_formatter_settings_form($field, $instance, $view_mode, $
   }
   
   $element['location_field'] = array(
-    '#title' => t('Location Field'),
+    '#title' => t('Location Field:'),
     '#type' => 'select',
     '#options' => $location_options,
     '#default_value' => $settings['location_field'],
     '#description' => 'A field to use as the location for calendar events.',
+    '#weight' => 0,
   );
 
   $element['description_field'] = array(
-    '#title' => t('Description Field'),
+    '#title' => t('Description Field:'),
     '#type' => 'select',
     '#options' => $description_options,
     '#default_value' => $settings['description_field'],
     '#description' => 'A field to use as the description for calendar events.',
+    '#weight' => 1,
   );
   
   $element['past_events'] = array(
-    '#title' => t('Show for Past Events'),
+    '#title' => t('Show Add to Cal widget for Past Events'),
     '#type' => 'checkbox',
     '#default_value' => $settings['past_events'],
     '#description' => 'Show the widget for past events.',
+    '#weight' => 2,
   );
   
+  $element += date_field_formatter_settings_form($field, $instance, $view_mode, $form, $form_state);
+  
+  $element['format_type']['#weight'] = 3;
+  $element['fromto']['#weight'] = 4;
+  $element['multiple_number']['#weight'] = 5;
+  $element['multiple_from']['#weight'] = 6;
+  $element['multiple_to']['#weight'] = 7;
+  
+  dpm($element);
   return $element;
 }
 
