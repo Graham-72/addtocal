@@ -174,7 +174,6 @@ function addtocal_field_formatter_settings_form($field, $instance, $view_mode, $
   $element['multiple_from']['#weight'] = 6;
   $element['multiple_to']['#weight'] = 7;
   
-  dpm($element);
   return $element;
 }
 
