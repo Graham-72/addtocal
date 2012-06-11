@@ -1,8 +1,4 @@
-#addtocal_wrap {
-  
-}
-
-#addtocal {
+.addtocal {
   margin: -5px;
   padding: 5px;
   margin-bottom: 5px;
@@ -17,7 +13,7 @@
   cursor: pointer;
 }
 
-ul#addtocal_menu {
+ul.addtocal_menu {
   background: #efefef;
   border-radius: 4px;
   -webkit-border-radius: 4px;
@@ -33,19 +29,20 @@ ul#addtocal_menu {
   z-index: 50;
 }
 
-ul#addtocal_menu li {
+ul.addtocal_menu li {
   margin: 0px;
   padding: 0px;
 }
 
-ul#addtocal_menu li a {
+ul.addtocal_menu li a {
   color: inherit;
   text-decoration: none;
   display: block;
   padding: 5px;
 }
 
-ul#addtocal_menu li a:hover {
+ul.addtocal_menu li a:hover {
+  text-decoration: none;
   background: #cdcdcd;
   border-radius: 4px;
   -webkit-border-radius: 4px;

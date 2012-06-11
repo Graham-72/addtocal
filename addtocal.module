@@ -94,6 +94,8 @@ function addtocal_field_formatter_view($entity_type, $entity, $field, $instance,
       if (strtotime($start_date) >= time() ||
         ($display['settings']['past_events'] == TRUE && strtotime($start_date) < time())) {
         $element[0] += addtocal_render(
+          $entity_type,
+          $entity_id,
           $info['title'],
           $info['description'],
           $info['location'],
@@ -319,7 +321,7 @@ function addtocal_extract_event_info($entity_type, $entity, $entity_id = NULL, $
  * @param $ics_url
  * @return array
  */
-function addtocal_render($label, $description, $location, $start_date, $end_date, $url, $ics_url) {
+function addtocal_render($entity_type, $entity_id, $label, $description, $location, $start_date, $end_date, $url, $ics_url) {
   $rfc_dates = addtocal_rfc_3339_date($start_date, $end_date);
 
   $google_url = url('http://www.google.com/calendar/event', array(
@@ -345,10 +347,12 @@ function addtocal_render($label, $description, $location, $start_date, $end_date
     ),
   ));
 
+  $element_id = 'addtocal_' . $entity_type . '_' . $entity_id;
+
   return array(
     'button' => array(
       '#markup' => t('Add to Calendar'),
-      '#prefix' => '<div id="addtocal">',
+      '#prefix' => '<div class="addtocal" id="' . $element_id . '">',
       '#suffix' => '</div>',
       '#weight' => 1,
     ),
@@ -362,7 +366,10 @@ function addtocal_render($label, $description, $location, $start_date, $end_date
         l(t('Yahoo'), $yahoo_url, array('attributes' => array('target' => '_blank'))),
       ),
       '#type' => 'ul',
-      '#attributes' => array('id' => 'addtocal_menu'),
+      '#attributes' => array(
+        'id' => $element_id . '_menu',
+        'class' => array('addtocal_menu'),
+      ),
       '#attached' => array(
         'js' => array(
           drupal_get_path('module', 'addtocal') . '/addtocal.js',
