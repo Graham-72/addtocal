@@ -55,7 +55,7 @@ function addtocal_field_formatter_info() {
   return array(
     'addtocal_view' => array(
       'label' => t('Add to Cal'),
-      'field types' => array('datetime'),
+      'field types' => array('date'),
       'settings' => array(
         'format_type' => 'long',
         'multiple_number' => '',
@@ -276,7 +276,12 @@ function addtocal_extract_event_info($entity_type, $entity, $entity_id = NULL, $
   $dates = field_get_items($entity_type, $entity, $field_name);
   
   $start_date = $dates[0]['value'];
-  $end_date = $dates[0]['value2'];
+
+  if (array_key_exists('value2', $dates[0])) {
+    $end_date = $dates[0]['value2'];
+  } else {
+    $end_date = $start_date;
+  }
   
   $entity_info = entity_get_info($entity_type);
   
