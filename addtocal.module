@@ -84,12 +84,12 @@ function addtocal_field_formatter_view($entity_type, $entity, $field, $instance,
       list($entity_id) = entity_extract_ids($entity_type, $entity);
       
       $info = addtocal_extract_event_info($entity_type, $entity, $entity_id, $field['field_name']);
-      $dates = field_get_items($entity_type, $entity, 'field_event_date');
+      $dates = field_get_items($entity_type, $entity, $field['field_name']);
       
       $start_date = $dates[(count($dates) - 1)]['value'];
       
       $ics_url = $entity_type . '/' . $entity_id . '/' . $field['field_name'] . '/addtocal.ics';
-      
+
       // Check setting for past events and show widget accordingly
       if (strtotime($start_date) >= time() ||
         ($display['settings']['past_events'] == TRUE && strtotime($start_date) < time())) {
