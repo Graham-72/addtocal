@@ -1,5 +1,5 @@
 name = Add to Cal
-description = TODO: Description of module
+description = A field formatter providing a widget for exporting events to various formats.
 core = 7.x
 
 dependencies[] = date
