@@ -10,7 +10,7 @@
 function addtocal_menu() {
   $items = array();
   
-  foreach(addtocal_get_addtocal_entities() as $entity_name) {
+  foreach (addtocal_get_addtocal_entities() as $entity_name) {
     $items[$entity_name . '/%entity_object/%/addtocal.ics'] = array(
       'load arguments' => array($entity_name),
       'title' => 'Download Event',
@@ -36,7 +36,7 @@ function addtocal_get_addtocal_entities() {
       foreach ($bundle as $field_name => $field) {
         foreach ($field['display'] as $display_name => $display) {
           if ($display['type'] == 'addtocal_view') {
-            if(!in_array($entity_name, $entity_names)) {
+            if (!in_array($entity_name, $entity_names)) {
               $entity_names[] = $entity_name;
             }
           }
@@ -254,7 +254,6 @@ function addtocal_field_get_value($entity_type, $entity, $field_name) {
         $output = str_replace($search, $replace, $output);
       }
     }
-    
     
     return strip_tags($output);
   }
