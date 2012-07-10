@@ -297,6 +297,10 @@ function addtocal_extract_event_info($entity_type, $entity, $entity_id = NULL, $
   
   $location = addtocal_field_get_value($entity_type, $entity, $display['settings']['location_field']);
   $description = addtocal_field_get_value($entity_type, $entity, $display['settings']['description_field']);
+
+  if (strlen($description) > 1024) {
+    $description = truncate_utf8($description, 1024, TRUE, TRUE);
+  }
   
   $uri = entity_uri($entity_type, $entity);
   $url = $uri['path'];
