@@ -156,7 +156,7 @@ function addtocal_field_formatter_settings_form($field, $instance, $view_mode, $
     '#type' => 'select',
     '#options' => $description_options,
     '#default_value' => $settings['description_field'],
-    '#description' => 'A field to use as the description for calendar events.',
+    '#description' => 'A field to use as the description for calendar events.<br />The contents used from this field will be truncated to 1024 characters.',
     '#weight' => 1,
   );
   
