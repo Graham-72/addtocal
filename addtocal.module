@@ -450,6 +450,10 @@ function addtocal_download_ics($entity, $field_name) {
 
   $rfc_dates = addtocal_rfc_3339_date($info['start'], $info['end']);
 
+  // Set the filename.
+  $filename = preg_replace('/[\x00-\x1F]/u', '_', strip_tags($entity->title));
+  drupal_add_http_header('Content-Disposition', 'attachment; filename="' . $filename . '.ics"');
+
   echo 'BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//hacksw/handcal//NONSGML v1.0//EN
