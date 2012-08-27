@@ -9,7 +9,7 @@
  */
 function addtocal_menu() {
   $items = array();
-  
+
   foreach (addtocal_get_addtocal_entities() as $entity_name) {
     $items[$entity_name . '/%entity_object/%/addtocal.ics'] = array(
       'load arguments' => array($entity_name),
@@ -19,7 +19,7 @@ function addtocal_menu() {
       'access arguments' => array('access content'),
     );
   }
-  
+
   return $items;
 }
 
@@ -44,7 +44,7 @@ function addtocal_get_addtocal_entities() {
       }
     }
   }
-  
+
   return $entity_names;
 }
 
@@ -55,7 +55,7 @@ function addtocal_field_formatter_info() {
   return array(
     'addtocal_view' => array(
       'label' => t('Add to Cal'),
-      'field types' => array('date'),
+      'field types' => array('date', 'datestamp', 'datetime'),
       'settings' => array(
         'format_type' => 'long',
         'multiple_number' => '',
@@ -78,16 +78,16 @@ function addtocal_field_formatter_view($entity_type, $entity, $field, $instance,
     case 'addtocal_view':
       $element = array();
       $date_element = date_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display);
-      
+
       $element[0]['date'] = $date_element[0];
-      
+
       list($entity_id) = entity_extract_ids($entity_type, $entity);
-      
+
       $info = addtocal_extract_event_info($entity_type, $entity, $entity_id, $field['field_name']);
       $dates = field_get_items($entity_type, $entity, $field['field_name']);
-      
+
       $start_date = $dates[(count($dates) - 1)]['value'];
-      
+
       $ics_url = $entity_type . '/' . $entity_id . '/' . $field['field_name'] . '/addtocal.ics';
 
       // Check setting for past events and show widget accordingly
@@ -107,7 +107,7 @@ function addtocal_field_formatter_view($entity_type, $entity, $field, $instance,
       }
 
       return $element;
-      
+
       break;
   }
 }
@@ -116,22 +116,22 @@ function addtocal_field_formatter_view($entity_type, $entity, $field, $instance,
  * Implements hook_field_formatter_settings_form().
  */
 function addtocal_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
-  
+
   $bundle_name = $field['bundles'][$instance['entity_type']][0];
-  
+
   $display = $instance['display'][$view_mode];
   $settings = $display['settings'];
-  
+
   $field_list = field_info_instances($instance['entity_type'], $bundle_name);
-  
+
   $description_options = $location_options = array('-1' => 'None');
-  
+
   $location_field_types = array(
     'text_textfield',
     'addressfield_default',
     'addressfield_standard',
   );
-  
+
   foreach ($field_list as $field) {
     if (in_array($field['widget']['type'], $location_field_types)) {
       $location_options[$field['field_name']] = $field['label'];
@@ -141,7 +141,7 @@ function addtocal_field_formatter_settings_form($field, $instance, $view_mode, $
       $description_options[$field['field_name']] = $field['label'];
     }
   }
-  
+
   $element['location_field'] = array(
     '#title' => t('Location Field:'),
     '#type' => 'select',
@@ -159,7 +159,7 @@ function addtocal_field_formatter_settings_form($field, $instance, $view_mode, $
     '#description' => 'A field to use as the description for calendar events.<br />The contents used from this field will be truncated to 1024 characters.',
     '#weight' => 1,
   );
-  
+
   $element['past_events'] = array(
     '#title' => t('Show Add to Cal widget for Past Events'),
     '#type' => 'checkbox',
@@ -167,15 +167,15 @@ function addtocal_field_formatter_settings_form($field, $instance, $view_mode, $
     '#description' => 'Show the widget for past events.',
     '#weight' => 2,
   );
-  
+
   $element += date_field_formatter_settings_form($field, $instance, $view_mode, $form, $form_state);
-  
+
   $element['format_type']['#weight'] = 3;
   $element['fromto']['#weight'] = 4;
   $element['multiple_number']['#weight'] = 5;
   $element['multiple_from']['#weight'] = 6;
   $element['multiple_to']['#weight'] = 7;
-  
+
   return $element;
 }
 
@@ -202,19 +202,19 @@ function addtocal_field_formatter_settings_summary($field, $instance, $view_mode
 
   $location_output = t('Location field: !field', array('!field' => $location_output));
   $description_output = t('Description field: !field', array('!field' => $description_output));
-  
+
   $output = $location_output . ', ' . $description_output;
-  
+
   if ($settings['past_events'] == 1) {
     $output .= '<br />' . t('Showing the widget for past events.');
   }
-  
+
   return $output;
 }
 
 /**
  * Return the value of a field
- * 
+ *
  * @param $entity_type
  * @param $entity
  * @param $field_name
@@ -223,14 +223,14 @@ function addtocal_field_formatter_settings_summary($field, $instance, $view_mode
 function addtocal_field_get_value($entity_type, $entity, $field_name) {
   if (!empty($field_name)) {
     $value = field_get_items($entity_type, $entity, $field_name);
-    
+
     $field_info = field_info_field($field_name);
-    
+
     if ($field_info['type'] == 'addressfield') {
       $address = $value[0];
-      
+
       $string = '';
-      
+
       if (!empty($address['thoroughfare'])) $string .= $address['thoroughfare'] . ' ';
       if (!empty($address['premise'])) $string .= $address['premise'] . ', ';
       if (!empty($address['locality'])) $string .= $address['locality'] . ', ';
@@ -247,14 +247,14 @@ function addtocal_field_get_value($entity_type, $entity, $field_name) {
         '<br />' => '\n',
         PHP_EOL => '\n',
       );
-      
+
       $output = $value[0]['value'];
-      
+
       foreach ($replace_strings as $search => $replace) {
         $output = str_replace($search, $replace, $output);
       }
     }
-    
+
     return strip_tags($output);
   }
   else {
@@ -264,7 +264,7 @@ function addtocal_field_get_value($entity_type, $entity, $field_name) {
 
 /**
  * Return event information in an associative array based on a given entity.
- * 
+ *
  * @param $entity_type
  * @param $entity
  * @param null $entity_id
@@ -273,7 +273,7 @@ function addtocal_field_get_value($entity_type, $entity, $field_name) {
  */
 function addtocal_extract_event_info($entity_type, $entity, $entity_id = NULL, $field_name) {
   $dates = field_get_items($entity_type, $entity, $field_name);
-  
+
   $start_date = $dates[0]['value'];
 
   if (array_key_exists('value2', $dates[0])) {
@@ -281,30 +281,30 @@ function addtocal_extract_event_info($entity_type, $entity, $entity_id = NULL, $
   } else {
     $end_date = $start_date;
   }
-  
+
   $entity_info = entity_get_info($entity_type);
-  
+
   if (empty($entity_info['entity keys']['bundle'])) {
     $bundle = $entity_type;
   }
   else {
     $bundle = $entity->{$entity_info['entity keys']['bundle']};
   }
-  
+
   $instance = field_info_instance($entity_type, $field_name, $bundle);
-  
+
   $display = field_get_display($instance, 'default', $entity);
-  
+
   $location = addtocal_field_get_value($entity_type, $entity, $display['settings']['location_field']);
   $description = addtocal_field_get_value($entity_type, $entity, $display['settings']['description_field']);
 
   if (strlen($description) > 1024) {
     $description = truncate_utf8($description, 1024, TRUE, TRUE);
   }
-  
+
   $uri = entity_uri($entity_type, $entity);
   $url = $uri['path'];
-  
+
   return array(
     'title' => check_plain($entity->title),
     'start' => $start_date,
@@ -319,7 +319,7 @@ function addtocal_extract_event_info($entity_type, $entity, $entity_id = NULL, $
 
 /**
  * Generate a render array for the addtocal widget.
- * 
+ *
  * @param $label
  * @param $description
  * @param $location
@@ -433,21 +433,21 @@ function addtocal_rfc_3339_date($start, $end) {
 /**
  * Outputs an ICS file containing event information for the selected entity.
  * Called by hook_menu.
- * 
+ *
  * @param $entity
  * @param $field_name
  */
 function addtocal_download_ics($entity, $field_name) {
   drupal_add_http_header('Content-Type', 'application/calendar; charset=utf-8');
-  
+
   // Get entity type from the current path
   $entity_type = arg(0);
-  
+
   list($entity_id) = entity_extract_ids($entity_type, $entity);
   $info = addtocal_extract_event_info($entity_type, $entity, $entity_id, $field_name);
-  
+
   $rfc_dates = addtocal_rfc_3339_date($info['start'], $info['end']);
-  
+
   echo 'BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//hacksw/handcal//NONSGML v1.0//EN
