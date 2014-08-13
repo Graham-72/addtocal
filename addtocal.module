@@ -514,7 +514,7 @@ UID:' . $entity_type . '-' . $entity_id . '@' . $_SERVER['HTTP_HOST'] . '
 DTSTAMP:' . $rfc_dates['start'] . '
 DTSTART:' . $rfc_dates['start'] . '
 DTEND:' . $rfc_dates['end'] . '
-SUMMARY:' . $info['title'] . '
+SUMMARY:' . html_entity_decode($info['title'] , ENT_QUOTES) . '
 DESCRIPTION: ' . $info['description'] . ' - ' . url($info['url'], array('absolute' => TRUE)) . '
 LOCATION:' . $info['location'] . '
 END:VEVENT
