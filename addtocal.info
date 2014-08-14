@@ -3,3 +3,4 @@ description = A field formatter providing a widget for exporting events to vario
 core = 7.x
 
 dependencies[] = date
+dependencies[] = entity
