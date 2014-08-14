@@ -141,12 +141,12 @@ function addtocal_field_formatter_settings_form($field, $instance, $view_mode, $
     'addressfield_default',
     'addressfield_standard',
   );
-  foreach ($field_list as $field) {
-    if (in_array($field['widget']['type'], $location_field_types)) {
-      $location_options[$field['field_name']] = $field['label'];
+  foreach ($field_list as $field_i) {
+    if (in_array($field_i['widget']['type'], $location_field_types)) {
+      $location_options[$field_i['field_name']] = $field_i['label'];
     }
-    if ($field['widget']['type'] == 'text_textarea' || $field['widget']['type'] == 'text_textarea_with_summary') {
-      $description_options[$field['field_name']] = $field['label'];
+    if ($field_i['widget']['type'] == 'text_textarea' || $field_i['widget']['type'] == 'text_textarea_with_summary') {
+      $description_options[$field_i['field_name']] = $field_i['label'];
     }
   }
   $tokens_enabled = module_exists('token');
