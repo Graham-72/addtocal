@@ -109,6 +109,7 @@ function addtocal_field_formatter_view($entity_type, $entity, $field, $instance,
             $info['location'],
             $info['start'],
             $info['end'],
+            $info['timezone'],
             $info['url'],
             $ics_url
           );
@@ -336,6 +337,8 @@ function addtocal_extract_event_info($entity_type, $entity, $entity_id = NULL, $
     $end_date = $start_date;
   }
 
+  $timezone = $dates[0]['timezone_db'];
+
   $entity_info = entity_get_info($entity_type);
 
   if (empty($entity_info['entity keys']['bundle'])) {
@@ -363,6 +366,7 @@ function addtocal_extract_event_info($entity_type, $entity, $entity_id = NULL, $
     'title' => check_plain($entity->title),
     'start' => $start_date,
     'end' => $end_date,
+    'timezone' => $timezone,
     'location' => $location,
     'description' => $description,
     'entity_id' => $entity_id,
@@ -383,8 +387,8 @@ function addtocal_extract_event_info($entity_type, $entity, $entity_id = NULL, $
  * @param $ics_url
  * @return array
  */
-function addtocal_render($entity_type, $entity_id, $label, $description, $location, $start_date, $end_date, $url, $ics_url) {
-  $rfc_dates = addtocal_rfc_3339_date($start_date, $end_date);
+function addtocal_render($entity_type, $entity_id, $label, $description, $location, $start_date, $end_date, $timezone, $url, $ics_url) {
+  $rfc_dates = addtocal_rfc_3339_date($start_date, $end_date, $timezone);
 
   $google_url = url('http://www.google.com/calendar/event', array(
     'query' => array(
@@ -403,7 +407,7 @@ function addtocal_render($entity_type, $entity_id, $label, $description, $locati
       'v' => 60,
       'TITLE' => $label,
       'ST' => $rfc_dates['local_start'],
-      'DUR' => $rfc_dates['duration'],
+      'ET' => $rfc_dates['local_end'],
       'URL' => $_SERVER['HTTP_HOST'],
       'in_loc' => $location,
     ),
@@ -451,16 +455,27 @@ function addtocal_render($entity_type, $entity_id, $label, $description, $locati
  *   Start date
  * @param $end
  *   End date
+ * @param $timezone
+ *   Timezone for the supplied dates
  *
  * @return array
  */
-function addtocal_rfc_3339_date($start, $end) {
+function addtocal_rfc_3339_date($start, $end, $timezone) {
   if (!$end) {
     $end = $start;
   }
 
-  $start_timestamp = strtotime($start . 'UTC');
-  $end_timestamp = strtotime($end . 'UTC');
+  $tz_utc = new DateTimeZone('UTC');
+  $tz = new DateTimeZone($timezone);
+
+  $startDate = new DateTime($start, $tz); 
+  $startDate->setTimezone($tz_utc);
+
+  $endDate = new DateTime($end, $tz);
+  $endDate->setTimezone($tz_utc);
+
+  $start_timestamp = $startDate->getTimestamp();
+  $end_timestamp = $endDate->getTimestamp();
 
   $diff_timestamp = $end_timestamp - $start_timestamp;
 
@@ -472,15 +487,12 @@ function addtocal_rfc_3339_date($start, $end) {
   $diff_hours = str_pad(round(($diff_timestamp / 60) / 60), 2, '0', STR_PAD_LEFT);
   $diff_minutes = str_pad(abs(round($diff_timestamp / 60) - ($diff_hours * 60)), 2, '0', STR_PAD_LEFT);
 
-  $duration = $diff_hours . $diff_minutes;
-
   return array(
     'start' => $start_date,
     'end' => $end_date,
     'both' => $start_date . '/' . $end_date,
     'local_start' => $local_start_date,
     'local_end' => $local_end_date,
-    'duration' => $duration,
   );
 }
 
@@ -500,7 +512,7 @@ function addtocal_download_ics($entity, $field_name) {
   list($entity_id) = entity_extract_ids($entity_type, $entity);
   $info = addtocal_extract_event_info($entity_type, $entity, $entity_id, $field_name);
 
-  $rfc_dates = addtocal_rfc_3339_date($info['start'], $info['end']);
+  $rfc_dates = addtocal_rfc_3339_date($info['start'], $info['end'], $info['timezone']);
 
   // Set the filename.
   $filename = preg_replace('/[\x00-\x1F]/u', '_', strip_tags($entity->title));
