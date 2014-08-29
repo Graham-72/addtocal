@@ -106,7 +106,7 @@ function addtocal_field_formatter_view($entity_type, $entity, $field, $instance,
 
         list($entity_id) = entity_extract_ids($entity_type, $entity);
 
-        $info = addtocal_extract_event_info($entity_type, $entity, $entity_id, $field['field_name']);
+        $info = addtocal_extract_event_info($entity_type, $entity, $entity_id, $field['field_name'], $display);
         $dates = field_get_items($entity_type, $entity, $field['field_name']);
 
         $start_date = $dates[(count($dates) - 1)]['value'];
@@ -358,11 +358,13 @@ function addtocal_field_get_value($entity_type, $entity, $field_name) {
  *
  * @param $entity_type
  * @param $entity
- * @param null $entity_id
+ * @param int $entity_id
  * @param $field_name
+ * @param $display
+ *
  * @return array
  */
-function addtocal_extract_event_info($entity_type, $entity, $entity_id = NULL, $field_name) {
+function addtocal_extract_event_info($entity_type, $entity, $entity_id, $field_name, $display) {
   $dates = field_get_items($entity_type, $entity, $field_name);
 
   $start_date = $dates[0]['value'];
@@ -374,19 +376,6 @@ function addtocal_extract_event_info($entity_type, $entity, $entity_id = NULL, $
   }
 
   $timezone = $dates[0]['timezone_db'];
-
-  $entity_info = entity_get_info($entity_type);
-
-  if (empty($entity_info['entity keys']['bundle'])) {
-    $bundle = $entity_type;
-  }
-  else {
-    $bundle = $entity->{$entity_info['entity keys']['bundle']};
-  }
-
-  $instance = field_info_instance($entity_type, $field_name, $bundle);
-
-  $display = field_get_display($instance, 'default', $entity);
 
   $location = addtocal_field_get_value($entity_type, $entity, $display['settings']['location']);
   $description = addtocal_field_get_value($entity_type, $entity, $display['settings']['description']);
@@ -439,8 +428,20 @@ function addtocal_render($entity_type, $entity_id, $label, $description, $locati
       '#weight' => 2,
       '#theme' => 'item_list',
       '#items' => array(
-        l(t('iCalendar'), $ics_url),
-        l(t('Outlook'), $ics_url),
+        l(t('iCalendar'), $ics_url, array(
+          'query' => array(
+            'description' => $description,
+            'location' => $location,
+            'url' => $url,
+          ),
+        )),
+        l(t('Outlook'), $ics_url, array(
+          'query' => array(
+            'description' => $description,
+            'location' => $location,
+            'url' => $url,
+          ),
+        )),
         l(t('Google'), $google_url, array('attributes' => array('target' => '_blank'))),
         l(t('Yahoo'), $yahoo_url, array('attributes' => array('target' => '_blank'))),
       ),
@@ -519,17 +520,30 @@ function addtocal_rfc_3339_date($start, $end, $timezone) {
 function addtocal_download_ics($entity, $field_name) {
   drupal_add_http_header('Content-Type', 'application/calendar; charset=utf-8');
 
-  // Get entity type from the current path
-  $entity_type = arg(0);
-
-  list($entity_id) = entity_extract_ids($entity_type, $entity);
-  $info = addtocal_extract_event_info($entity_type, $entity, $entity_id, $field_name);
-
-  $rfc_dates = addtocal_rfc_3339_date($info['start'], $info['end'], $info['timezone']);
-
   // Set the filename.
   $filename = preg_replace('/[\x00-\x1F]/u', '_', strip_tags($entity->title));
   drupal_add_http_header('Content-Disposition', 'attachment; filename="' . $filename . '.ics"');
+
+  // Get entity type from the current path
+  $entity_type = arg(0);
+
+  // Get the entity_id.
+  list($entity_id) = entity_extract_ids($entity_type, $entity);
+
+  // Get description, location and originating url from the URL.
+  $query = drupal_get_query_parameters();
+  $description = isset($query['description']) ? $query['description'] : '';
+  $location = isset($query['location']) ? $query['location'] : '';
+  $url = isset($query['url']) ? $query['url'] : '';
+
+  $dates = field_get_items($entity_type, $entity, $field_name);
+  $start_date = $dates[0]['value'];
+  if (array_key_exists('value2', $dates[0])) {
+    $end_date = $dates[0]['value2'];
+  } else {
+    $end_date = $start_date;
+  }
+  $rfc_dates = addtocal_rfc_3339_date($start_date, $end_date);
 
   echo 'BEGIN:VCALENDAR
 VERSION:2.0
@@ -539,13 +553,13 @@ UID:' . $entity_type . '-' . $entity_id . '@' . $_SERVER['HTTP_HOST'] . '
 DTSTAMP:' . $rfc_dates['start'] . '
 DTSTART:' . $rfc_dates['start'] . '
 DTEND:' . $rfc_dates['end'] . '
-SUMMARY:' . html_entity_decode($info['title'] , ENT_QUOTES) . '
-DESCRIPTION: ' . $info['description'] . ' - ' . url($info['url'], array('absolute' => TRUE)) . '
-LOCATION:' . $info['location'] . '
+SUMMARY:' . check_plain($entity->title) . '
+DESCRIPTION: ' . $description . ' - ' . url($url, array('absolute' => TRUE)) . '
+LOCATION:' . $location . '
 END:VEVENT
 END:VCALENDAR';
 
-  exit();
+  drupal_exit();
 }
 
 function addtocal_google_link($entity, $field_name) {
