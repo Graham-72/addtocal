@@ -287,8 +287,11 @@ function addtocal_field_formatter_settings_summary($field, $instance, $view_mode
  */
 function addtocal_field_get_value($entity_type, $entity, $field_name) {
   if (!empty($field_name)) {
-    if (!is_array($field_name)) {
+    if (!$field_name['tokenized'])  {     // Unless tokenization has been applied,
+      $field_name = $field_name['field']; // just use the raw content of the field.
+
       $value = field_get_items($entity_type, $entity, $field_name);
+
 
       $field_info = field_info_field($field_name);
 
@@ -482,7 +485,7 @@ function addtocal_rfc_3339_date($start, $end, $timezone) {
   $tz_utc = new DateTimeZone('UTC');
   $tz = new DateTimeZone($timezone);
 
-  $startDate = new DateTime($start, $tz); 
+  $startDate = new DateTime($start, $tz);
   $startDate->setTimezone($tz_utc);
 
   $endDate = new DateTime($end, $tz);
