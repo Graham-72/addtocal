@@ -8,28 +8,29 @@
  * Implements hook_menu().
  */
 function addtocal_menu() {
+
   $items = array();
 
   foreach (addtocal_get_addtocal_entities() as $entity_name) {
-    $items[$entity_name . '/%entity_object/%/addtocal.ics'] = array(
+    $items[$entity_name . '/%entity_object/%/%/addtocal.ics'] = array(
       'load arguments' => array($entity_name),
       'title' => 'Download Event',
       'page callback' => 'addtocal_download_ics',
-      'page arguments' => array(1, 2),
+      'page arguments' => array(1, 2, 3),
       'access arguments' => array('access content'),
     );
-    $items[$entity_name . '/%entity_object/%/addtocal.google'] = array(
+    $items[$entity_name . '/%entity_object/%/%/addtocal-google'] = array(
       'load arguments' => array($entity_name),
       'title' => 'Download Event',
       'page callback' => 'addtocal_google_link',
-      'page arguments' => array(1, 2),
+      'page arguments' => array(1, 2, 3),
       'access arguments' => array('access content'),
     );
-    $items[$entity_name . '/%entity_object/%/addtocal.yahoo'] = array(
+    $items[$entity_name . '/%entity_object/%/%/addtocal-yahoo'] = array(
       'load arguments' => array($entity_name),
       'title' => 'Download Event',
       'page callback' => 'addtocal_yahoo_link',
-      'page arguments' => array(1, 2),
+      'page arguments' => array(1, 2, 3),
       'access arguments' => array('access content'),
     );
   }
@@ -87,6 +88,7 @@ function addtocal_field_formatter_info() {
         'description_tokenized' => '',
         'past_events' => FALSE,
         'show_repeat_rule' => 'hide',
+        'view_mode' => '',
       ),
     ),
   );
@@ -100,6 +102,7 @@ function addtocal_field_formatter_view($entity_type, $entity, $field, $instance,
     case 'addtocal_view':
       $element = array();
       $date_element = date_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display);
+      $view_mode = $display['settings']['view_mode'];
 
       if ($date_element) {
         $element[0]['date'] = $date_element[0];
@@ -112,9 +115,10 @@ function addtocal_field_formatter_view($entity_type, $entity, $field, $instance,
         $start_date = $dates[(count($dates) - 1)]['value'];
 
          // Build URLs
-        $ics_url = $entity_type . '/' . $entity_id . '/' . $field['field_name'] . '/addtocal.ics';
-        $google_url = $entity_type . '/' . $entity_id . '/' . $field['field_name'] . '/addtocal.google';
-        $yahoo_url = $entity_type . '/' . $entity_id . '/' . $field['field_name'] . '/addtocal.yahoo';
+        $base_url = $entity_type . '/' . $entity_id . '/' . $field['field_name'] . '/' . $view_mode;
+        $ics_url = $base_url . '/addtocal.ics';
+        $google_url = $base_url . '/addtocal-google';
+        $yahoo_url = $base_url . '/addtocal-yahoo';
 
         // Check setting for past events and show widget accordingly
         if (strtotime($start_date) >= time() ||
@@ -122,9 +126,6 @@ function addtocal_field_formatter_view($entity_type, $entity, $field, $instance,
           $element[0] += addtocal_render(
             $entity_type,
             $entity_id,
-            $info['title'],
-            $info['description'],
-            $info['location'],
             $info['start'],
             $info['end'],
             $info['timezone'],
@@ -226,6 +227,13 @@ function addtocal_field_formatter_settings_form($field, $instance, $view_mode, $
     '#default_value' => $settings['past_events'],
     '#description' => 'Show the widget for past events.',
     '#weight' => 2,
+  );
+
+  $element['view_mode'] = array(
+    '#title' => t('You Should Not Be Able To See This'),
+    '#type' => 'hidden',
+    '#default_value' => $view_mode,
+    '#tree' => TRUE,
   );
 
   $element += date_field_formatter_settings_form($field, $instance, $view_mode, $form, $form_state);
@@ -403,16 +411,18 @@ function addtocal_extract_event_info($entity_type, $entity, $entity_id, $field_n
 /**
  * Generate a render array for the addtocal widget.
  *
- * @param $label
- * @param $description
- * @param $location
+ * @param $entity_type
+ * @param $entity_id
  * @param $start_date
  * @param $end_date
+ * @param $timezone
  * @param $url
  * @param $ics_url
+ * @param $google_url
+ * @param $yahoo_url
  * @return array
  */
-function addtocal_render($entity_type, $entity_id, $label, $description, $location, $start_date, $end_date, $timezone, $url, $ics_url, $google_url, $yahoo_url) {
+function addtocal_render($entity_type, $entity_id, $start_date, $end_date, $timezone, $url, $ics_url, $google_url, $yahoo_url) {
   $rfc_dates = addtocal_rfc_3339_date($start_date, $end_date, $timezone);
 
   $element_id = 'addtocal_' . $entity_type . '_' . $entity_id;
@@ -428,20 +438,8 @@ function addtocal_render($entity_type, $entity_id, $label, $description, $locati
       '#weight' => 2,
       '#theme' => 'item_list',
       '#items' => array(
-        l(t('iCalendar'), $ics_url, array(
-          'query' => array(
-            'description' => $description,
-            'location' => $location,
-            'url' => $url,
-          ),
-        )),
-        l(t('Outlook'), $ics_url, array(
-          'query' => array(
-            'description' => $description,
-            'location' => $location,
-            'url' => $url,
-          ),
-        )),
+        l(t('iCalendar'), $ics_url, array()),
+        l(t('Outlook'), $ics_url, array()),
         l(t('Google'), $google_url, array('attributes' => array('target' => '_blank'))),
         l(t('Yahoo'), $yahoo_url, array('attributes' => array('target' => '_blank'))),
       ),
@@ -516,8 +514,9 @@ function addtocal_rfc_3339_date($start, $end, $timezone) {
  *
  * @param $entity
  * @param $field_name
+ * @param $view_mode
  */
-function addtocal_download_ics($entity, $field_name) {
+function addtocal_download_ics($entity, $field_name, $view_mode) {
   drupal_add_http_header('Content-Type', 'application/calendar; charset=utf-8');
 
   // Set the filename.
@@ -530,11 +529,17 @@ function addtocal_download_ics($entity, $field_name) {
   // Get the entity_id.
   list($entity_id) = entity_extract_ids($entity_type, $entity);
 
-  // Get description, location and originating url from the URL.
+  // Get query.
   $query = drupal_get_query_parameters();
-  $description = isset($query['description']) ? $query['description'] : '';
-  $location = isset($query['location']) ? $query['location'] : '';
+
+  // Get display and info.
+  $display = addtocal_get_display($entity, $entity_type, $field_name, $view_mode);
+  $info = addtocal_extract_event_info($entity_type, $entity, $entity_id, $field_name, $display);
+
   $url = isset($query['url']) ? $query['url'] : '';
+  $description = $info['description'];
+  $location = $info['location'];
+  $title = $info['title'];
 
   $dates = field_get_items($entity_type, $entity, $field_name);
   $start_date = $dates[0]['value'];
@@ -543,7 +548,7 @@ function addtocal_download_ics($entity, $field_name) {
   } else {
     $end_date = $start_date;
   }
-  $rfc_dates = addtocal_rfc_3339_date($start_date, $end_date);
+  $rfc_dates = addtocal_rfc_3339_date($start_date, $end_date, $dates[0]['timezone']);
 
   echo 'BEGIN:VCALENDAR
 VERSION:2.0
@@ -553,7 +558,7 @@ UID:' . $entity_type . '-' . $entity_id . '@' . $_SERVER['HTTP_HOST'] . '
 DTSTAMP:' . $rfc_dates['start'] . '
 DTSTART:' . $rfc_dates['start'] . '
 DTEND:' . $rfc_dates['end'] . '
-SUMMARY:' . check_plain($entity->title) . '
+SUMMARY:' . check_plain($title) . '
 DESCRIPTION: ' . $description . ' - ' . url($url, array('absolute' => TRUE)) . '
 LOCATION:' . $location . '
 END:VEVENT
@@ -562,13 +567,22 @@ END:VCALENDAR';
   drupal_exit();
 }
 
-function addtocal_google_link($entity, $field_name) {
+/**
+ * Redirects to a Google Calendar event.
+ * Called by hook_menu().
+ *
+ * @param $entity
+ * @param $field_name
+ * @param $view_mode
+ */
+function addtocal_google_link($entity, $field_name, $view_mode) {
 
   // Get entity type from the current path
   $entity_type = arg(0);
 
   list($entity_id) = entity_extract_ids($entity_type, $entity);
-  $info = addtocal_extract_event_info($entity_type, $entity, $entity_id, $field_name);
+  $display = addtocal_get_display($entity, $entity_type, $field_name, $view_mode);
+  $info = addtocal_extract_event_info($entity_type, $entity, $entity_id, $field_name, $display);
 
   $rfc_dates = addtocal_rfc_3339_date($info['start'], $info['end'], $info['timezone']);
 
@@ -587,13 +601,22 @@ function addtocal_google_link($entity, $field_name) {
   drupal_goto($google_url);
 }
 
-function addtocal_yahoo_link($entity, $field_name) {
+/**
+ * Redirects to a Yahoo Calendar event.
+ * Called by hook_menu().
+ *
+ * @param $entity
+ * @param $field_name
+ * @param $view_mode
+ */
+function addtocal_yahoo_link($entity, $field_name, $view_mode) {
 
   // Get entity type from the current path
   $entity_type = arg(0);
 
   list($entity_id) = entity_extract_ids($entity_type, $entity);
-  $info = addtocal_extract_event_info($entity_type, $entity, $entity_id, $field_name);
+  $display = addtocal_get_display($entity, $entity_type, $field_name, $view_mode);
+  $info = addtocal_extract_event_info($entity_type, $entity, $entity_id, $field_name, $display);
 
   $rfc_dates = addtocal_rfc_3339_date($info['start'], $info['end'], $info['timezone']);
 
@@ -612,3 +635,15 @@ function addtocal_yahoo_link($entity, $field_name) {
   drupal_goto($yahoo_url);
 }
 
+/**
+ * Helper function returns current display for menu callbacks.
+ *
+ * @param $entity
+ * @param $entity_type
+ * @param $field_name
+ * @param $view_mode
+ * @return mixed
+ */
+function addtocal_get_display($entity, $entity_type, $field_name, $view_mode) {
+  return field_get_display(field_info_instance($entity_type, $field_name, $entity->type), $view_mode, $entity);
+}
