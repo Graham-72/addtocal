@@ -548,7 +548,7 @@ function addtocal_download_ics($entity, $field_name, $view_mode) {
   } else {
     $end_date = $start_date;
   }
-  $rfc_dates = addtocal_rfc_3339_date($start_date, $end_date, $dates[0]['timezone']);
+  $rfc_dates = addtocal_rfc_3339_date($start_date, $end_date, $info['timezone']);
 
   echo 'BEGIN:VCALENDAR
 VERSION:2.0
