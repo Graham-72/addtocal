@@ -11,7 +11,7 @@ function addtocal_menu() {
 
   $items = array();
 
-  foreach (addtocal_get_addtocal_entities() as $entity_name) {
+  foreach (addtocal_get_addtocal_entities() as $entity_name => $values) {
     $items[$entity_name . '/%entity_object/%/%/addtocal.ics'] = array(
       'load arguments' => array($entity_name),
       'title' => 'Download Event',
@@ -39,20 +39,35 @@ function addtocal_menu() {
 }
 
 /**
- * Returns a list of all eligible entities to use with Add to Cal.
+ * Returns a list of all eligible entities to use with Add to Cal, along with their eligible fields and matching view modes.
+ *
+ * Output structure: [$entity_name][$field_name][$view_mode_name]
+ *
  * @return array
  */
 function addtocal_get_addtocal_entities() {
   $entities = field_info_instances();
-  $entity_names = array();
+  $entity_info = array();
 
   foreach ($entities as $entity_name => $entity) {
     foreach ($entity as $bundle_name => $bundle) {
       foreach ($bundle as $field_name => $field) {
         foreach ($field['display'] as $display_name => $display) {
           if ($display['type'] == 'addtocal_view') {
-            if (!in_array($entity_name, $entity_names)) {
-              $entity_names[] = $entity_name;
+
+            // This awkward elif structures the output
+            if (!array_key_exists($entity_name, $entity_info)) {
+              $entity_info[$entity_name] = array(
+                $field_name => array(
+                  $display_name,
+                ),
+              );
+            } else if (!array_key_exists($field_name, $entity_info[$entity_name])) {
+              $entity_info[$entity_name][$field_name] = array(
+                $display_name,
+              );
+            } else if (!array_key_exists($display_name, $entity_info[$entity_name][$field_name])) {
+              $entity_info[$entity_name][$field_name][] = $display_name;
             }
           }
         }
@@ -60,7 +75,9 @@ function addtocal_get_addtocal_entities() {
     }
   }
 
-  return $entity_names;
+
+
+  return $entity_info;
 }
 
 /**
@@ -354,7 +371,7 @@ function addtocal_field_get_value($entity_type, $entity, $field_name) {
     else {
       $output = token_replace($field_name['tokenized'], array('node' => $entity), array('clear' => TRUE));
     }
-    return strip_tags($output);
+    return $output;
   }
   else {
     return '';
@@ -422,12 +439,12 @@ function addtocal_extract_event_info($entity_type, $entity, $entity_id, $field_n
  * @param $yahoo_url
  * @return array
  */
-function addtocal_render($entity_type, $entity_id, $start_date, $end_date, $timezone, $url, $ics_url, $google_url, $yahoo_url) {
+function addtocal_render($entity_type, $entity_id, $start_date, $end_date, $timezone, $url, $ics_url, $google_url, $yahoo_url, $email_format = false) {
   $rfc_dates = addtocal_rfc_3339_date($start_date, $end_date, $timezone);
 
   $element_id = 'addtocal_' . $entity_type . '_' . $entity_id;
 
-  return array(
+  $render = array(
     'button' => array(
       '#markup' => t('Add to Calendar'),
       '#prefix' => '<div class="addtocal" id="' . $element_id . '">',
@@ -448,16 +465,20 @@ function addtocal_render($entity_type, $entity_id, $start_date, $end_date, $time
         'id' => $element_id . '_menu',
         'class' => array('addtocal_menu'),
       ),
-      '#attached' => array(
-        'js' => array(
-          drupal_get_path('module', 'addtocal') . '/addtocal.js',
-        ),
-        'css' => array(
-          drupal_get_path('module', 'addtocal') . '/addtocal.css',
-        ),
-      ),
     )
   );
+
+  if (!$email_format) {
+    $render['#attached'] = array();
+    $render['#attached']['js'] = array(
+      drupal_get_path('module', 'addtocal') . '/addtocal.js',
+    );
+    $render['#attached']['css'] = array(
+      drupal_get_path('module', 'addtocal') . '/addtocal.css',
+    );
+  }
+
+  return $render;
 }
 
 /**
