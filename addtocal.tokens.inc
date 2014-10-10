@@ -5,7 +5,7 @@
  */
 
 /**
- * Implements hook_token_info().
+ * Implements hook_token_info_alter().
  */
 function addtocal_token_info_alter(&$info) {
 
