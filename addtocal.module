@@ -178,15 +178,27 @@ function addtocal_field_formatter_settings_form($field, $instance, $view_mode, $
   $description_options = $location_options = array('-1' => 'None');
 
   $location_field_types = array(
-    'text_textfield',
-    'addressfield_default',
-    'addressfield_standard',
+    'text',
+    'text_long',
+    'text_with_summary',
+    'addressfield',
   );
+  $description_field_types = array(
+    'text',
+    'text_long',
+    'text_with_summary',
+  );
+
   foreach ($field_list as $field_i) {
-    if (in_array($field_i['widget']['type'], $location_field_types)) {
+    // Get the full field array
+    $field_i_full = field_info_field($field_list[$field_i['field_name']]['field_name']);
+    // Get its type
+    $field_i_type = $field_i_full['type'];
+    // Check for location/description compatibility, add to appropriate arrays.
+    if (in_array($field_i_type, $location_field_types)) {
       $location_options[$field_i['field_name']] = $field_i['label'];
     }
-    if ($field_i['widget']['type'] == 'text_textarea' || $field_i['widget']['type'] == 'text_textarea_with_summary') {
+    if (in_array($field_i_type, $description_field_types)) {
       $description_options[$field_i['field_name']] = $field_i['label'];
     }
   }
