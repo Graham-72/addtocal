@@ -17,21 +17,24 @@ function addtocal_menu() {
       'title' => 'Download Event',
       'page callback' => 'addtocal_download_ics',
       'page arguments' => array(1, 2, 3),
-      'access arguments' => array('access content'),
+      'access_callback' => 'entity_access',
+      'access arguments' => array('view', $entity_name, 1),
     );
     $items[$entity_name . '/%entity_object/%/%/addtocal-google'] = array(
       'load arguments' => array($entity_name),
       'title' => 'Download Event',
       'page callback' => 'addtocal_google_link',
       'page arguments' => array(1, 2, 3),
-      'access arguments' => array('access content'),
+      'access_callback' => 'entity_access',
+      'access arguments' => array('view', $entity_name, 1),
     );
     $items[$entity_name . '/%entity_object/%/%/addtocal-yahoo'] = array(
       'load arguments' => array($entity_name),
       'title' => 'Download Event',
       'page callback' => 'addtocal_yahoo_link',
       'page arguments' => array(1, 2, 3),
-      'access arguments' => array('access content'),
+      'access_callback' => 'entity_access',
+      'access arguments' => array('view', $entity_name, 1),
     );
   }
 
