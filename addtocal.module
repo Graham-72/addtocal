@@ -11,13 +11,15 @@ function addtocal_menu() {
 
   $items = array();
 
+  global $user;
+
   foreach (addtocal_get_addtocal_entities() as $entity_name => $values) {
     $items[$entity_name . '/%entity_object/%/%/addtocal.ics'] = array(
       'load arguments' => array($entity_name),
       'title' => 'Download Event',
       'page callback' => 'addtocal_download_ics',
       'page arguments' => array(1, 2, 3),
-      'access_callback' => 'entity_access',
+      'access callback' => 'entity_access',
       'access arguments' => array('view', $entity_name, 1),
     );
     $items[$entity_name . '/%entity_object/%/%/addtocal-google'] = array(
@@ -25,7 +27,7 @@ function addtocal_menu() {
       'title' => 'Download Event',
       'page callback' => 'addtocal_google_link',
       'page arguments' => array(1, 2, 3),
-      'access_callback' => 'entity_access',
+      'access callback' => 'entity_access',
       'access arguments' => array('view', $entity_name, 1),
     );
     $items[$entity_name . '/%entity_object/%/%/addtocal-yahoo'] = array(
@@ -33,7 +35,7 @@ function addtocal_menu() {
       'title' => 'Download Event',
       'page callback' => 'addtocal_yahoo_link',
       'page arguments' => array(1, 2, 3),
-      'access_callback' => 'entity_access',
+      'access callback' => 'entity_access',
       'access arguments' => array('view', $entity_name, 1),
     );
   }
