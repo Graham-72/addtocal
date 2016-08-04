@@ -44,6 +44,19 @@ function addtocal_menu() {
 }
 
 /**
+ * Implements hook_module_implements_alter().
+ */
+function addtocal_module_implements_alter(&$implementations, $hook) {
+  if ($hook == 'token_info_alter') {
+    // This is sometimes happening before the token module adds fields. Lets
+    // move it down in order to make it so it doesn't cause tokens to not
+    // run for date fields.
+    unset($implementations['addtocal']);
+    $implementations['addtocal'] = 'tokens';
+  }
+}
+
+/**
  * Returns a list of all eligible entities to use with Add to Cal, along with their eligible fields and matching view modes.
  *
  * Output structure: [$entity_name][$field_name][$view_mode_name]
