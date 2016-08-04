@@ -610,7 +610,7 @@ DTSTAMP:' . $rfc_dates['start'] . '
 DTSTART:' . $rfc_dates['start'] . '
 DTEND:' . $rfc_dates['end'] . '
 SUMMARY:' . check_plain($title) . '
-DESCRIPTION: ' . $description . ' - ' . url($url, array('absolute' => TRUE)) . '
+DESCRIPTION:' . $description . '
 LOCATION:' . $location . '
 END:VEVENT
 END:VCALENDAR';
