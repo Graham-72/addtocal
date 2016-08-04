@@ -10,9 +10,7 @@
 function addtocal_menu() {
 
   $items = array();
-
-  global $user;
-
+  
   foreach (addtocal_get_addtocal_entities() as $entity_name => $values) {
     $items[$entity_name . '/%entity_object/%/%/addtocal.ics'] = array(
       'load arguments' => array($entity_name),
