@@ -442,7 +442,7 @@ function addtocal_extract_event_info($entity_type, $entity, $entity_id, $field_n
   $uri = entity_uri($entity_type, $entity);
   $url = $uri['path'];
 
-  return array(
+  $info = array(
     'title' => check_plain($entity->title),
     'start' => $start_date,
     'end' => $end_date,
@@ -453,6 +453,11 @@ function addtocal_extract_event_info($entity_type, $entity, $entity_id, $field_n
     'entity_type' => $entity_type,
     'url' => $url,
   );
+
+  // Allow other modules to directly alter the addtocal info.
+  drupal_alter('addtocal_extract_event_info', $info, $entity_type, $entity);
+
+  return $info;
 }
 
 /**
