@@ -535,7 +535,14 @@ function addtocal_rfc_3339_date($start, $end, $timezone) {
   }
 
   $tz_utc = new DateTimeZone('UTC');
-  $tz = new DateTimeZone($timezone);
+  // When $timezone is an empty string no default is used and we see a Unknown or bad timezone () in DateTimeZone->__construct() error.
+  if (empty($timezone)) {
+    $tz = NULL;
+  }
+  else {
+    $tz = new DateTimeZone($timezone);
+  }
+
 
   $startDate = new DateTime($start, $tz);
   $startDate->setTimezone($tz_utc);
