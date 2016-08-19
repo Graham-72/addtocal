@@ -444,15 +444,15 @@ function addtocal_extract_event_info($entity_type, $entity, $entity_id, $field_n
   $url = $uri['path'];
 
   $info = array(
-    'title' => check_plain($entity->title),
-    'start' => $start_date,
-    'end' => $end_date,
-    'timezone' => $timezone,
-    'location' => $location,
-    'description' => $description,
-    'entity_id' => $entity_id,
+    'title'       => check_plain($entity->title),
+    'start'       => $start_date,
+    'end'         => $end_date,
+    'timezone'    => $timezone,
+    'location'    => isset($location) ? $location : NULL,
+    'description' => isset($description) ? $description : NULL,
+    'entity_id'   => $entity_id,
     'entity_type' => $entity_type,
-    'url' => $url,
+    'url'         => $url,
   );
 
   // Allow other modules to directly alter the addtocal info.
