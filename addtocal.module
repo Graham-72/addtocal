@@ -110,6 +110,7 @@ function addtocal_field_formatter_info() {
         'multiple_from' => '',
         'multiple_to' => '',
         'fromto' => 'both',
+        'show_remaining_days' => FALSE,
         'location' => array(
           'field' => -1,
           'tokenized' => '',
@@ -215,11 +216,11 @@ function addtocal_field_formatter_settings_form($field, $instance, $view_mode, $
       $description_options[$field_i['field_name']] = $field_i['label'];
     }
   }
-  $tokens_enabled = module_exists('token');
-  if ($tokens_enabled) {
-    $location_options['tokenize output'] = 'Use Tokens';
-    $description_options['tokenize output'] = 'Use Tokens';
-  }
+  $tokens_enabled = TRUE;
+
+  $location_options['tokenize output'] = 'Use Tokens';
+  $description_options['tokenize output'] = 'Use Tokens';
+
 
   $element['location'] = array(
     '#type' => 'fieldset',
@@ -456,7 +457,7 @@ function addtocal_extract_event_info($entity_type, $entity, $entity_id, $field_n
   );
 
   // Allow other modules to directly alter the addtocal info.
-  drupal_alter('addtocal_extract_event_info', $info, $entity_type, $entity);
+  backdrop_alter('addtocal_extract_event_info', $info, $entity_type, $entity);
 
   return $info;
 }
@@ -507,10 +508,10 @@ function addtocal_render($entity_type, $entity_id, $start_date, $end_date, $time
   if (!$email_format) {
     $render['#attached'] = array();
     $render['#attached']['js'] = array(
-      drupal_get_path('module', 'addtocal') . '/addtocal.js',
+      backdrop_get_path('module', 'addtocal') . '/addtocal.js',
     );
     $render['#attached']['css'] = array(
-      drupal_get_path('module', 'addtocal') . '/addtocal.css',
+      backdrop_get_path('module', 'addtocal') . '/addtocal.css',
     );
   }
 
@@ -581,11 +582,11 @@ function addtocal_rfc_3339_date($start, $end, $timezone) {
  * @param $view_mode
  */
 function addtocal_download_ics($entity, $field_name, $view_mode) {
-  drupal_add_http_header('Content-Type', 'application/calendar; charset=utf-8');
+  backdrop_add_http_header('Content-Type', 'application/calendar; charset=utf-8');
 
   // Set the filename.
   $filename = preg_replace('/[\x00-\x1F]/u', '_', strip_tags($entity->title));
-  drupal_add_http_header('Content-Disposition', 'attachment; filename="' . $filename . '.ics"');
+  backdrop_add_http_header('Content-Disposition', 'attachment; filename="' . $filename . '.ics"');
 
   // Get entity type from the current path
   $entity_type = arg(0);
@@ -594,7 +595,7 @@ function addtocal_download_ics($entity, $field_name, $view_mode) {
   list($entity_id) = entity_extract_ids($entity_type, $entity);
 
   // Get query.
-  $query = drupal_get_query_parameters();
+  $query = backdrop_get_query_parameters();
 
   // Get display and info.
   $display = addtocal_get_display($entity, $entity_type, $field_name, $view_mode);
@@ -628,7 +629,7 @@ LOCATION:' . $location . '
 END:VEVENT
 END:VCALENDAR';
 
-  drupal_exit();
+  backdrop_exit();
 }
 
 /**
@@ -662,7 +663,7 @@ function addtocal_google_link($entity, $field_name, $view_mode) {
     ),
   ));
 
-  drupal_goto($google_url);
+  backdrop_goto($google_url);
 }
 
 /**
@@ -696,7 +697,7 @@ function addtocal_yahoo_link($entity, $field_name, $view_mode) {
     ),
   ));
 
-  drupal_goto($yahoo_url);
+  backdrop_goto($yahoo_url);
 }
 
 /**

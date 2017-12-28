@@ -82,7 +82,7 @@ function addtocal_tokens($type, $tokens, array $data = array(), array $options =
             $yahoo_url,
             true            // format for email
           );
-          $html = drupal_render($render);
+          $html = backdrop_render($render);
           $replacements[$original] = $html;
         }
       }

@@ -1,6 +1,4 @@
 name = Add to Cal
 description = A field formatter providing a widget for exporting events to various formats.
-core = 7.x
-
-dependencies[] = date
-dependencies[] = entity
+backdrop = 1.x
+type = module

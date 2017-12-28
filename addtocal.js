@@ -1,6 +1,6 @@
 (function($) {
   // Don't need to re-attach this function, so we do it here instead
-  // of in Drupal.behaviors.
+  // of in Backdrop.behaviors.
   $(document).ready(function() {
     // When clicking anywhere in the window, hide menu.
     $(window).click(function() {
@@ -11,7 +11,7 @@
     });
   });
 
-  Drupal.behaviors.addtocal = {
+  Backdrop.behaviors.addtocal = {
     attach: function(context) {
       $('.addtocal', context).once('addtocal', function() {
         var $button = $(this),
