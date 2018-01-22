@@ -9,6 +9,8 @@ available are:
 * iCal
 * Outlook
 
+(Note: only Google Calendar has been tested with this initial release.)
+
 ## Settings
 1. Add a **date field** to the content type that provides the 
    calendar entry.
@@ -21,9 +23,15 @@ available are:
 * **Show for Past Events**: Determines whether the widget will be displayed for past events.
 
 ## Usage
-The field formatter provides a button next to the field that shows a 
-drop-down menu. This menu contains links to the supported formats, 
-and includes basic styling that can be easily modified through CSS.
+If a date field's display has been configured to use the **Add to Cal**
+format, an 'Add to Calendar' button appears next to the field when it
+is displayed. This button provides a drop-down menu containing links to 
+the supported calendar formats, and includes basic styling that can be 
+easily modified through CSS.
+
+If, for example, the Google Calendar option is selected, a log-in to a
+Google Account will be requested, the details will then appear there on an
+admin page with a 'save' button to add the event to that account's calendar.
 
 For screenshots and a more detailed explanation of how this module 
 works, check out the blog post at 
