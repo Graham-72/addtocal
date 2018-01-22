@@ -431,11 +431,11 @@ function addtocal_extract_event_info($entity_type, $entity, $entity_id, $field_n
 
   $timezone = $dates[0]['timezone_db'];
 
-  if (isset($display['settings']['location_field'])) {
-    $location = addtocal_field_get_value($entity_type, $entity, $display['settings']['location_field']);
+  if (isset($display['settings']['location'])) {
+    $location = addtocal_field_get_value($entity_type, $entity, $display['settings']['location']);
   }
-  if (isset($display['settings']['description_field'])) {
-    $description = addtocal_field_get_value($entity_type, $entity, $display['settings']['description_field']);
+  if (isset($display['settings']['description'])) {
+    $description = addtocal_field_get_value($entity_type, $entity, $display['settings']['description']);
     if (strlen($description) > 1024) {
       $description = truncate_utf8($description, 1024, TRUE, TRUE);
     }
